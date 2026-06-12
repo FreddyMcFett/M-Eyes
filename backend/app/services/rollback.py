@@ -11,12 +11,15 @@ from app.models import (
     DhcpRange,
     DhcpReservation,
     DhcpSubnet,
+    ExtAttrDef,
     Feed,
     Host,
     IPAddress,
     Network,
     Record,
+    RpzRule,
     Tag,
+    View,
     Zone,
 )
 from app.services import audit, events
@@ -34,6 +37,9 @@ OBJECT_TYPES = {
     "host": Host,
     "feed": Feed,
     "blocklist_entry": BlocklistEntry,
+    "dns_view": View,
+    "rpz_rule": RpzRule,
+    "extattr_def": ExtAttrDef,
 }
 
 _SKIP_FIELDS = {"created_at", "updated_at"}

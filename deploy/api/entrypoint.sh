@@ -7,6 +7,7 @@ BIND_DIR="${MEYES_BIND_OUTPUT_DIR:-/shared/bind}"
 KEA_DIR="${MEYES_KEA_OUTPUT_DIR:-/shared/kea}"
 mkdir -p "$BIND_DIR" "$KEA_DIR"
 [ -f "$BIND_DIR/zones.conf" ] || : > "$BIND_DIR/zones.conf"
+[ -f "$BIND_DIR/rpz-options.conf" ] || : > "$BIND_DIR/rpz-options.conf"
 if [ ! -f "$KEA_DIR/kea-dhcp4.conf" ]; then
   cat > "$KEA_DIR/kea-dhcp4.conf" <<'EOF'
 {

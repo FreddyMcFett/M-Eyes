@@ -15,6 +15,7 @@ router = APIRouter(prefix="/zones", tags=["dns"])
 def _out(zone: Zone) -> ZoneOut:
     out = ZoneOut.model_validate(zone)
     out.record_count = len(zone.records)
+    out.view_name = zone.view.name if zone.view else None
     return out
 
 

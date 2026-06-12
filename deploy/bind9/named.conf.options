@@ -5,4 +5,6 @@ options {
     allow-query { any; };
     recursion no;
     dnssec-validation auto;
+    // M-Eyes DNS firewall: response-policy is generated alongside zones.conf
+    include "/etc/bind/m-eyes/rpz-options.conf";
 };

@@ -9,11 +9,15 @@ import Networks from './pages/ipam/Networks';
 import NetworkDetail from './pages/ipam/NetworkDetail';
 import Zones from './pages/dns/Zones';
 import ZoneDetail from './pages/dns/ZoneDetail';
+import Views from './pages/dns/Views';
 import Subnets from './pages/dhcp/Subnets';
 import SubnetDetail from './pages/dhcp/SubnetDetail';
+import Leases from './pages/dhcp/Leases';
 import Hosts from './pages/Hosts';
 import Feeds from './pages/feeds/Feeds';
 import Blocklist from './pages/feeds/Blocklist';
+import DnsFirewall from './pages/feeds/DnsFirewall';
+import ExtAttrs from './pages/ExtAttrs';
 import Changelog from './pages/Changelog';
 import Events from './pages/Events';
 import Runbook from './pages/Runbook';
@@ -48,11 +52,15 @@ export default function App() {
               <Route path="ipam/:id" element={<NetworkDetail />} />
               <Route path="dns" element={<Zones />} />
               <Route path="dns/:id" element={<ZoneDetail />} />
+              <Route path="dns-views" element={<Views />} />
               <Route path="dhcp" element={<Subnets />} />
               <Route path="dhcp/:id" element={<SubnetDetail />} />
+              <Route path="leases" element={<Leases />} />
               <Route path="hosts" element={<Hosts />} />
               <Route path="feeds" element={<Feeds />} />
               <Route path="blocklist" element={<Blocklist />} />
+              <Route path="dnsfw" element={<DnsFirewall />} />
+              <Route path="extattrs" element={<ExtAttrs />} />
               <Route path="changelog" element={<Changelog />} />
               <Route path="events" element={<Events />} />
               <Route path="runbook" element={<Runbook />} />

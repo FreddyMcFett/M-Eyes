@@ -13,8 +13,11 @@ from app.models import Base, BlocklistEntry, Feed, Network, Tag, User
 from app.security import hash_password
 from app.services import dhcp as dhcp_service
 from app.services import dns as dns_service
-from app.services import events, ipam
+from app.services import events
+from app.services import extattrs as extattr_service
 from app.services import host as host_service
+from app.services import ipam
+from app.services import rpz as rpz_service
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("meyes.seed")
@@ -93,6 +96,23 @@ def seed() -> None:
             Feed(slug="fqdn", name="Known FQDNs", kind="fqdn"),
             Feed(slug="servers", name="Server networks (tag)", kind="tag", tag_id=server_tag.id),
         ])
+
+        # Extensible attributes (Infoblox-style typed metadata)
+        extattr_service.create_def(db, ACTOR, {"name": "Owner", "type": "string",
+                                               "comment": "Responsible team or person"})
+        extattr_service.create_def(db, ACTOR, {"name": "Environment", "type": "enum",
+                                               "allowed_values": ["prod", "staging", "dev"]})
+        extattr_service.create_def(db, ACTOR, {"name": "Location", "type": "string",
+                                               "comment": "Rack / room / site detail"})
+        extattr_service.set_for_object(db, ACTOR, "network", servers.id,
+                                       {"Owner": "infrastructure", "Environment": "prod"})
+
+        # DNS firewall (RPZ) demo rules
+        rpz_service.create_rule(db, ACTOR, {"fqdn": "malware.example.com", "action": "block",
+                                            "comment": "Demo: blocked domain"})
+        rpz_service.create_rule(db, ACTOR, {"fqdn": "tracker.example.net", "action": "substitute",
+                                            "substitute": "10.10.1.80",
+                                            "comment": "Demo: walled garden"})
 
         events.emit(db, "info", "system", "Demo data seeded")
         db.commit()

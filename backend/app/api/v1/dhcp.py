@@ -17,8 +17,15 @@ from app.schemas.dhcp import (
     DhcpSubnetUpdate,
 )
 from app.services import dhcp as dhcp_service
+from app.services import leases as lease_service
 
 router = APIRouter(prefix="/dhcp", tags=["dhcp"])
+
+
+@router.get("/leases")
+def list_leases(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Live lease table, read from Kea via the Control Agent."""
+    return lease_service.list_leases(db)
 
 
 def _out(subnet: DhcpSubnet) -> DhcpSubnetOut:

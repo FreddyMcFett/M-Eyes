@@ -6,9 +6,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.models import Network, Record, Zone
+from app.models import Network, Record, View, Zone
 from app.models.dns import RECORD_TYPES
-from app.services import audit, events
+from app.services import audit, events, extattrs
 
 _NAME_RE = re.compile(r"^(@|\*|[A-Za-z0-9_]([A-Za-z0-9_\-\.\*]*[A-Za-z0-9_])?)$")
 
@@ -45,9 +45,10 @@ def find_reverse_zone(db: Session, ip: str) -> Zone | None:
         octets[0] + ".in-addr.arpa",  # /8
     ]
     for name in candidates:
-        zone = db.scalar(select(Zone).where(Zone.name == name))
-        if zone:
-            return zone
+        # the same zone name may exist in several views; prefer the default view
+        zones = db.scalars(select(Zone).where(Zone.name == name)).all()
+        if zones:
+            return min(zones, key=lambda z: (z.view_id is not None, z.id))
     return None
 
 
@@ -66,13 +67,28 @@ def find_forward_zone(db: Session, fqdn: str) -> tuple[Zone, str] | None:
     for zone in db.scalars(select(Zone).where(Zone.kind == "forward")).all():
         zname = zone.name.rstrip(".").lower()
         if fqdn == zname or fqdn.endswith("." + zname):
-            if best is None or len(zname) > len(best.name.rstrip(".")):
+            # longest suffix wins; on a tie prefer the default view over named views
+            if best is None or (len(zname), zone.view_id is None) > (
+                len(best.name.rstrip(".")), best.view_id is None
+            ):
                 best = zone
     if best is None:
         return None
     zname = best.name.rstrip(".").lower()
     relative = "@" if fqdn == zname else fqdn[: -(len(zname) + 1)]
     return best, relative
+
+
+def _check_view_and_duplicate(db: Session, name: str, view_id: int | None,
+                              exclude_id: int | None = None) -> None:
+    if view_id is not None and db.get(View, view_id) is None:
+        raise HTTPException(status_code=404, detail="DNS view not found")
+    query = select(Zone).where(Zone.name == name, Zone.view_id == view_id)
+    if exclude_id is not None:
+        query = query.where(Zone.id != exclude_id)
+    if db.scalar(query):
+        where = "the default view" if view_id is None else "this view"
+        raise HTTPException(status_code=409, detail=f"Zone {name} already exists in {where}")
 
 
 def create_zone(db: Session, actor: str, data: dict) -> Zone:
@@ -86,8 +102,7 @@ def create_zone(db: Session, actor: str, data: dict) -> Zone:
     if not name:
         raise HTTPException(status_code=422, detail="Zone name is required")
     data["name"] = name
-    if db.scalar(select(Zone).where(Zone.name == name)):
-        raise HTTPException(status_code=409, detail=f"Zone {name} already exists")
+    _check_view_and_duplicate(db, name, data.get("view_id"))
     data.setdefault("soa_mname", settings.dns_default_soa_mname)
     data.setdefault("soa_rname", settings.dns_default_soa_rname)
     data.setdefault("default_ttl", settings.dns_default_ttl)
@@ -107,6 +122,8 @@ def update_zone(db: Session, actor: str, zone: Zone, data: dict) -> Zone:
     before = audit.snapshot(zone)
     data.pop("name", None)  # renaming a zone is delete + recreate
     data.pop("serial", None)
+    if "view_id" in data and data["view_id"] != zone.view_id:
+        _check_view_and_duplicate(db, zone.name, data["view_id"], exclude_id=zone.id)
     for key, value in data.items():
         setattr(zone, key, value)
     bump_serial(db, zone)
@@ -119,6 +136,9 @@ def update_zone(db: Session, actor: str, zone: Zone, data: dict) -> Zone:
 def delete_zone(db: Session, actor: str, zone: Zone) -> None:
     before = audit.snapshot(zone)
     name = zone.name
+    for record in zone.records:
+        extattrs.purge(db, "record", record.id)
+    extattrs.purge(db, "zone", zone.id)
     db.delete(zone)
     db.flush()
     audit.record(db, actor, "delete", "zone", before["id"], before, None, summary=f"Deleted zone {name}")
@@ -228,6 +248,7 @@ def update_record(db: Session, actor: str, record: Record, data: dict) -> Record
 def delete_record(db: Session, actor: str, record: Record) -> None:
     before = audit.snapshot(record)
     zone = record.zone
+    extattrs.purge(db, "record", record.id)
     db.delete(record)
     db.flush()
     bump_serial(db, zone)

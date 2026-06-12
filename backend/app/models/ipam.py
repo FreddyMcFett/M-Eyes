@@ -1,4 +1,6 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, Table, UniqueConstraint
+from datetime import datetime
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -54,10 +56,11 @@ class IPAddress(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(primary_key=True)
     network_id: Mapped[int] = mapped_column(ForeignKey("networks.id", ondelete="CASCADE"))
     ip: Mapped[str] = mapped_column(String(64), index=True)
-    status: Mapped[str] = mapped_column(String(16), default="used")  # used|reserved|dhcp
+    status: Mapped[str] = mapped_column(String(16), default="used")  # used|reserved|dhcp|discovered
     hostname: Mapped[str] = mapped_column(String(255), default="")
     mac: Mapped[str] = mapped_column(String(32), default="")
     description: Mapped[str] = mapped_column(String(255), default="")
+    last_seen: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)  # discovery
 
     network: Mapped[Network] = relationship(back_populates="ip_addresses")
     tags: Mapped[list[Tag]] = relationship(secondary=ip_tags, lazy="selectin")

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Trash2, UploadCloud } from 'lucide-react';
 import { api } from '../../api/client';
-import { Network, Zone } from '../../api/types';
+import { DnsView, Network, Zone } from '../../api/types';
 import DataTable from '../../components/DataTable';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import FormField from '../../components/FormField';
@@ -16,7 +16,7 @@ export default function Zones() {
   const queryClient = useQueryClient();
   const [editorOpen, setEditorOpen] = useState(false);
   const [deleting, setDeleting] = useState<Zone | null>(null);
-  const [form, setForm] = useState({ name: '', kind: 'forward', network_id: '' });
+  const [form, setForm] = useState({ name: '', kind: 'forward', network_id: '', view_id: '', dnssec: false });
 
   const { data: zones = [], refetch } = useQuery({
     queryKey: ['zones'],
@@ -26,6 +26,10 @@ export default function Zones() {
     queryKey: ['networks'],
     queryFn: () => api.get<Network[]>('/api/v1/networks'),
   });
+  const { data: views = [] } = useQuery({
+    queryKey: ['dns-views'],
+    queryFn: () => api.get<DnsView[]>('/api/v1/views'),
+  });
 
   const create = useMutation({
     mutationFn: () =>
@@ -33,6 +37,8 @@ export default function Zones() {
         name: form.name || undefined,
         kind: form.kind,
         network_id: form.kind === 'reverse' && form.network_id ? Number(form.network_id) : undefined,
+        view_id: form.view_id ? Number(form.view_id) : undefined,
+        dnssec_enabled: form.dnssec,
       }),
     onSuccess: () => {
       toast('success', 'Zone created');
@@ -74,6 +80,12 @@ export default function Zones() {
             ),
           },
           { header: 'Kind', searchText: (z: Zone) => z.kind, render: (z) => <StatusBadge value={z.kind} /> },
+          {
+            header: 'View',
+            searchText: (z: Zone) => z.view_name ?? 'default',
+            render: (z) => <span className="font-mono">{z.view_name ?? 'default'}</span>,
+          },
+          { header: 'DNSSEC', render: (z) => (z.dnssec_enabled ? <StatusBadge value="signed" /> : <span className="text-muted">—</span>) },
           { header: 'Serial', render: (z) => <span className="font-mono">{z.serial}</span> },
           { header: 'Records', render: (z) => <span>{z.record_count}</span> },
           { header: 'TTL', render: (z) => <span>{z.default_ttl}</span> },
@@ -89,7 +101,7 @@ export default function Zones() {
         rows={zones}
         rowKey={(z) => z.id}
         onCreate={() => {
-          setForm({ name: '', kind: 'forward', network_id: '' });
+          setForm({ name: '', kind: 'forward', network_id: '', view_id: '', dnssec: false });
           setEditorOpen(true);
         }}
         createLabel="Create Zone"
@@ -131,6 +143,22 @@ export default function Zones() {
           hint={form.kind === 'reverse' ? 'e.g. 1.10.10.in-addr.arpa (leave empty when deriving from a network)' : 'e.g. corp.example.com'}
         >
           <input className="f-input font-mono" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        </FormField>
+        <FormField label="DNS view" hint="Split-horizon: the zone is only served to clients matching the view">
+          <select className="f-input" value={form.view_id} onChange={(e) => setForm({ ...form, view_id: e.target.value })}>
+            <option value="">default (all clients)</option>
+            {views.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.name} ({v.match_clients})
+              </option>
+            ))}
+          </select>
+        </FormField>
+        <FormField label="DNSSEC" hint="Sign the zone with BIND's default dnssec-policy">
+          <label className="flex items-center gap-2 text-table">
+            <input type="checkbox" checked={form.dnssec} onChange={(e) => setForm({ ...form, dnssec: e.target.checked })} />
+            Enable inline signing
+          </label>
         </FormField>
         <div className="flex justify-end gap-2 mt-4">
           <button className="f-btn-secondary" onClick={() => setEditorOpen(false)}>

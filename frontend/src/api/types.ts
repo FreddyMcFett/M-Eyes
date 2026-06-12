@@ -33,7 +33,17 @@ export interface IPAddress {
   hostname: string;
   mac: string;
   description: string;
+  last_seen: string | null;
   tags: Tag[];
+}
+
+export interface DnsView {
+  id: number;
+  name: string;
+  match_clients: string;
+  description: string;
+  position: number;
+  zone_count: number;
 }
 
 export interface Zone {
@@ -49,6 +59,9 @@ export interface Zone {
   expire: number;
   minimum: number;
   network_id: number | null;
+  view_id: number | null;
+  view_name: string | null;
+  dnssec_enabled: boolean;
   record_count: number;
 }
 
@@ -167,4 +180,60 @@ export interface Deployment {
   status: string;
   message: string;
   config_version: number;
+}
+
+export interface RpzRule {
+  id: number;
+  fqdn: string;
+  action: string;
+  substitute: string;
+  comment: string;
+  enabled: boolean;
+}
+
+export interface ExtAttrDef {
+  id: number;
+  name: string;
+  type: string;
+  comment: string;
+  allowed_values: string[] | null;
+  usage_count: number;
+}
+
+export interface ExtAttrValues {
+  object_type: string;
+  object_id: number;
+  values: Record<string, string>;
+}
+
+export interface DhcpLease {
+  ip: string;
+  mac: string;
+  hostname: string;
+  state: string;
+  expires_at: string | null;
+  subnet: string | null;
+}
+
+export interface LeasesResponse {
+  reachable: boolean;
+  detail: string;
+  leases: DhcpLease[];
+}
+
+export interface SearchResult {
+  type: string;
+  id: number;
+  label: string;
+  detail: string;
+  url: string;
+}
+
+export interface DiscoveryResult {
+  cidr: string;
+  scanned: number;
+  alive: number;
+  created: number;
+  updated: number;
+  conflicts: number;
 }
