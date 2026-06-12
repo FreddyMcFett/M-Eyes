@@ -8,6 +8,7 @@ from sqlalchemy import select
 
 from app.api.v1 import (
     addresses,
+    apikeys,
     auth,
     blocklist,
     certs,
@@ -34,10 +35,30 @@ from app.feeds.router import router as feeds_router
 from app.models import Base, User
 from app.security import hash_password
 from app.services import certs as certs_service
+from app.services import threat_feeds as threat_feed_service
 from app.services.broker import broker
 from app.version import __version__
 
 logger = logging.getLogger("meyes")
+
+THREAT_FEED_CHECK_SECONDS = 1800  # how often due feeds are looked for
+
+
+def _sync_due_threat_feeds() -> None:
+    with SessionLocal() as db:
+        for feed in threat_feed_service.feeds_due(db):
+            threat_feed_service.sync_feed(db, feed)
+            db.commit()
+
+
+async def threat_feed_refresher() -> None:
+    """Background loop: re-sync enabled threat feeds past their refresh interval."""
+    while True:
+        try:
+            await asyncio.to_thread(_sync_due_threat_feeds)
+        except Exception:  # noqa: BLE001 - the refresher must survive any feed error
+            logger.exception("Threat feed auto-refresh failed")
+        await asyncio.sleep(THREAT_FEED_CHECK_SECONDS)
 
 
 def seed_admin() -> None:
@@ -55,7 +76,9 @@ async def lifespan(app: FastAPI):
     with SessionLocal() as db:
         certs_service.ensure_bootstrap(db)
     broker.set_loop(asyncio.get_running_loop())
+    refresher = asyncio.create_task(threat_feed_refresher())
     yield
+    refresher.cancel()
 
 
 def create_app() -> FastAPI:
@@ -77,7 +100,7 @@ def create_app() -> FastAPI:
         zones.router, views.router, records.router, dhcp.router, hosts.router,
         feeds_admin.router, blocklist.router, changelog.router, deploy.router,
         runbook.router, logs.router, system.router, rpz.router, extattrs.router,
-        search.router, certs.router,
+        search.router, certs.router, apikeys.router,
     )
     for router in api_routers:
         app.include_router(router, prefix="/api/v1")

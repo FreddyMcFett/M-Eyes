@@ -1,3 +1,5 @@
+import hashlib
+import secrets
 from datetime import UTC, datetime, timedelta
 
 import bcrypt
@@ -6,6 +8,15 @@ import jwt
 from app.config import get_settings
 
 ALGORITHM = "HS256"
+API_KEY_PREFIX = "meyes_"
+
+
+def generate_api_key() -> str:
+    return API_KEY_PREFIX + secrets.token_hex(20)
+
+
+def hash_api_key(key: str) -> str:
+    return hashlib.sha256(key.encode()).hexdigest()
 
 
 def hash_password(password: str) -> str:

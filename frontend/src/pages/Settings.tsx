@@ -1,18 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Activity,
   Bug,
+  Copy,
+  DatabaseBackup,
   KeyRound,
   Lock,
   Radio,
   Server,
   ShieldCheck,
   SlidersHorizontal,
+  Trash2,
 } from 'lucide-react';
 import { api } from '../api/client';
-import { TlsStatus } from '../api/types';
+import { ApiKey, TlsStatus, UpdateStatus } from '../api/types';
 import Certificates from '../components/Certificates';
+import ConfirmDialog from '../components/ConfirmDialog';
 import FormField from '../components/FormField';
 import { useToast } from '../components/Toast';
 
@@ -20,13 +24,14 @@ interface SettingsValues {
   values: Record<string, string>;
 }
 
-type Tab = 'system' | 'https' | 'logging' | 'security';
+type Tab = 'system' | 'https' | 'logging' | 'security' | 'maintenance';
 
 const TABS: { id: Tab; label: string; icon: JSX.Element }[] = [
   { id: 'system', label: 'System', icon: <SlidersHorizontal size={14} /> },
   { id: 'https', label: 'HTTPS / TLS', icon: <Lock size={14} /> },
   { id: 'logging', label: 'Logging & Debug', icon: <Radio size={14} /> },
   { id: 'security', label: 'Security', icon: <KeyRound size={14} /> },
+  { id: 'maintenance', label: 'Backup & Updates', icon: <DatabaseBackup size={14} /> },
 ];
 
 export default function Settings() {
@@ -35,6 +40,11 @@ export default function Settings() {
   const [tab, setTab] = useState<Tab>('system');
   const [values, setValues] = useState<Record<string, string>>({});
   const [passwords, setPasswords] = useState({ current: '', next: '', confirm: '' });
+  const [keyForm, setKeyForm] = useState({ name: '', expires_in_days: '' });
+  const [createdKey, setCreatedKey] = useState<ApiKey | null>(null);
+  const [deletingKey, setDeletingKey] = useState<ApiKey | null>(null);
+  const [restoreConfirm, setRestoreConfirm] = useState<Record<string, unknown> | null>(null);
+  const restoreInput = useRef<HTMLInputElement>(null);
 
   const { data } = useQuery({
     queryKey: ['app-settings'],
@@ -43,6 +53,17 @@ export default function Settings() {
   const { data: tls } = useQuery({
     queryKey: ['tls-status'],
     queryFn: () => api.get<TlsStatus>('/api/v1/system/certificates/status'),
+  });
+
+  const { data: apiKeys = [] } = useQuery({
+    queryKey: ['api-keys'],
+    queryFn: () => api.get<ApiKey[]>('/api/v1/apikeys'),
+    enabled: tab === 'security',
+  });
+  const { data: updateStatus } = useQuery({
+    queryKey: ['update-check'],
+    queryFn: () => api.get<UpdateStatus>('/api/v1/system/update-check'),
+    enabled: tab === 'maintenance',
   });
 
   useEffect(() => {
@@ -86,6 +107,71 @@ export default function Settings() {
     },
     onError: (err: Error) => toast('error', err.message),
   });
+
+  const createKey = useMutation({
+    mutationFn: () =>
+      api.post<ApiKey>('/api/v1/apikeys', {
+        name: keyForm.name,
+        expires_in_days: keyForm.expires_in_days ? Number(keyForm.expires_in_days) : null,
+      }),
+    onSuccess: (key) => {
+      setCreatedKey(key);
+      setKeyForm({ name: '', expires_in_days: '' });
+      qc.invalidateQueries({ queryKey: ['api-keys'] });
+    },
+    onError: (err: Error) => toast('error', err.message),
+  });
+
+  const deleteKey = useMutation({
+    mutationFn: (key: ApiKey) => api.delete(`/api/v1/apikeys/${key.id}`),
+    onSuccess: () => {
+      toast('success', 'API key revoked');
+      setDeletingKey(null);
+      qc.invalidateQueries({ queryKey: ['api-keys'] });
+    },
+    onError: (err: Error) => toast('error', err.message),
+  });
+
+  const restore = useMutation({
+    mutationFn: (backup: Record<string, unknown>) => api.post('/api/v1/system/restore', backup),
+    onSuccess: () => {
+      toast('success', 'Configuration restored — review and deploy to the engines');
+      setRestoreConfirm(null);
+      qc.invalidateQueries();
+    },
+    onError: (err: Error) => {
+      toast('error', err.message);
+      setRestoreConfirm(null);
+    },
+  });
+
+  const downloadBackup = async () => {
+    try {
+      const backup = await api.get('/api/v1/system/backup');
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `m-eyes-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : 'Failed');
+    }
+  };
+
+  const onRestoreFile = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const parsed = JSON.parse(await file.text());
+      if (parsed?.format !== 'm-eyes-backup') throw new Error('Not an M-Eyes backup file');
+      setRestoreConfirm(parsed);
+    } catch (err) {
+      toast('error', err instanceof Error ? err.message : 'Could not read the backup file');
+    } finally {
+      if (restoreInput.current) restoreInput.current.value = '';
+    }
+  };
 
   const downloadDiagnostics = async () => {
     try {
@@ -270,6 +356,7 @@ export default function Settings() {
       )}
 
       {tab === 'security' && (
+        <div className="grid lg:grid-cols-2 gap-4 items-start">
         <div className="f-card p-4 max-w-lg">
           <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
             <KeyRound size={16} className="text-info" /> Change Password
@@ -296,7 +383,165 @@ export default function Settings() {
             <p className="text-danger text-xs mt-2">Passwords do not match</p>
           )}
         </div>
+
+        <div className="f-card p-4">
+          <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+            <KeyRound size={16} className="text-accent" /> API Keys
+          </h3>
+          <p className="text-table text-muted mb-3">
+            Service-account keys for automation (Terraform, Ansible, scripts). Authenticate with
+            the <code className="font-mono text-xs">X-API-Key</code> header. The full key is shown
+            only once, at creation.
+          </p>
+          {createdKey && (
+            <div className="border border-accent rounded p-3 mb-3 bg-accent/5">
+              <div className="text-xs font-medium mb-1">Key “{createdKey.name}” created — copy it now, it will not be shown again:</div>
+              <div className="flex items-center gap-2">
+                <code className="font-mono text-xs break-all flex-1">{createdKey.key}</code>
+                <button
+                  className="f-btn-secondary"
+                  onClick={() => {
+                    navigator.clipboard.writeText(createdKey.key ?? '');
+                    toast('success', 'Key copied to clipboard');
+                  }}
+                >
+                  <Copy size={13} /> Copy
+                </button>
+              </div>
+            </div>
+          )}
+          <table className="w-full text-table mb-3">
+            <thead>
+              <tr className="text-left text-xs text-muted border-b border-line">
+                <th className="py-1.5">Name</th>
+                <th>Key</th>
+                <th>Expires</th>
+                <th>Last used</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {apiKeys.map((key) => (
+                <tr key={key.id} className="border-b border-line">
+                  <td className="py-1.5 font-medium">{key.name}</td>
+                  <td className="font-mono text-xs">{key.prefix}…</td>
+                  <td>{key.expires_at ? new Date(key.expires_at).toLocaleDateString() : 'never'}</td>
+                  <td>{key.last_used_at ? new Date(key.last_used_at).toLocaleString() : '—'}</td>
+                  <td className="text-right">
+                    <button onClick={() => setDeletingKey(key)} className="text-danger hover:opacity-70" title="Revoke">
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {apiKeys.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-2 text-muted text-xs">No API keys yet</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Key name">
+              <input className="f-input" value={keyForm.name} onChange={(e) => setKeyForm({ ...keyForm, name: e.target.value })} placeholder="terraform" />
+            </FormField>
+            <FormField label="Expires in (days)" hint="Empty = never">
+              <input className="f-input" type="number" min={1} value={keyForm.expires_in_days} onChange={(e) => setKeyForm({ ...keyForm, expires_in_days: e.target.value })} />
+            </FormField>
+          </div>
+          <button className="f-btn-primary" disabled={!keyForm.name || createKey.isPending} onClick={() => createKey.mutate()}>
+            Create API key
+          </button>
+        </div>
+        </div>
       )}
+
+      {tab === 'maintenance' && (
+        <div className="grid lg:grid-cols-2 gap-4 items-start">
+          <div className="f-card p-4">
+            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+              <DatabaseBackup size={16} className="text-accent" /> Configuration Backup
+            </h3>
+            <p className="text-table text-muted mb-3">
+              Downloads the entire configuration (networks, zones, records, DHCP, firewall rules,
+              feeds, settings and the change log) as a single JSON file. User accounts and TLS
+              private keys are excluded. Restoring <strong>replaces</strong> the current
+              configuration.
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              <button className="f-btn-primary" onClick={downloadBackup}>
+                <DatabaseBackup size={14} /> Download backup
+              </button>
+              <button className="f-btn-secondary" onClick={() => restoreInput.current?.click()} disabled={restore.isPending}>
+                Restore from file…
+              </button>
+              <input
+                ref={restoreInput}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(e) => onRestoreFile(e.target.files?.[0])}
+              />
+            </div>
+          </div>
+
+          <div className="f-card p-4">
+            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+              <Server size={16} className="text-info" /> Software Updates
+            </h3>
+            {updateStatus ? (
+              <div className="text-table">
+                <div className="mb-1">
+                  <span className="text-muted">Installed:</span>{' '}
+                  <span className="font-mono">v{updateStatus.current_version}</span>
+                </div>
+                <div className="mb-2">
+                  <span className="text-muted">Latest release:</span>{' '}
+                  <span className="font-mono">{updateStatus.latest_version ? `v${updateStatus.latest_version}` : 'unknown'}</span>
+                </div>
+                {updateStatus.error && <p className="text-warning text-xs mb-2">{updateStatus.error}</p>}
+                {updateStatus.update_available ? (
+                  <div className="border border-warning rounded p-3 bg-warning/5">
+                    <div className="font-medium text-sm mb-1">Update available</div>
+                    <p className="text-xs text-muted mb-2">
+                      Data is preserved across upgrades: the database lives in a persistent volume
+                      and schema migrations run automatically on start.
+                    </p>
+                    <pre className="text-xs font-mono bg-slate-900 text-slate-100 p-2 rounded mb-2">{'docker compose pull\ndocker compose up -d'}</pre>
+                    <a href={updateStatus.release_url} target="_blank" rel="noreferrer" className="text-info text-xs hover:underline">
+                      Release notes →
+                    </a>
+                  </div>
+                ) : (
+                  !updateStatus.error && (
+                    <span className="px-2 py-0.5 rounded bg-accent/15 text-accent text-xs font-medium">Up to date</span>
+                  )
+                )}
+              </div>
+            ) : (
+              <p className="text-table text-muted">Checking for updates…</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <ConfirmDialog
+        title="Restore configuration"
+        message={`Replace the ENTIRE current configuration with this backup${
+          restoreConfirm?.created_at ? ` (created ${String(restoreConfirm.created_at)})` : ''
+        }? This cannot be undone — consider downloading a backup of the current state first.`}
+        open={restoreConfirm !== null}
+        onCancel={() => setRestoreConfirm(null)}
+        onConfirm={() => restoreConfirm && restore.mutate(restoreConfirm)}
+      />
+
+      <ConfirmDialog
+        title="Revoke API key"
+        message={`Revoke the API key ${deletingKey?.name}? Clients using it will lose access immediately.`}
+        open={deletingKey !== null}
+        onCancel={() => setDeletingKey(null)}
+        onConfirm={() => deletingKey && deleteKey.mutate(deletingKey)}
+      />
     </>
   );
 }

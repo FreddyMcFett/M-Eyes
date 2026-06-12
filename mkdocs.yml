@@ -18,6 +18,7 @@ nav:
   - Infoblox-style Features: infoblox-features.md
   - Fortinet Integration: fortinet-integration.md
   - Versioning & Auditing: versioning.md
+  - Upgrading & Backup: upgrade.md
   - API Reference: api/reference.md
 markdown_extensions:
   - admonition

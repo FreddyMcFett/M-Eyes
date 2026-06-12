@@ -5,6 +5,11 @@ from app.models.base import Base, TimestampMixin
 
 RECORD_TYPES = ("A", "AAAA", "CNAME", "MX", "TXT", "NS", "PTR", "SRV")
 
+# primary   -> authoritative, records managed in M-Eyes (BIND type master)
+# secondary -> zone transferred from external primaries (BIND type slave)
+# forward   -> queries forwarded to external resolvers (BIND type forward)
+ZONE_ROLES = ("primary", "secondary", "forward")
+
 
 class View(Base, TimestampMixin):
     """Split-horizon DNS view (Infoblox-style). Zones without a view land in the
@@ -42,6 +47,9 @@ class Zone(Base, TimestampMixin):
         ForeignKey("dns_views.id", ondelete="SET NULL"), nullable=True
     )
     dnssec_enabled: Mapped[bool] = mapped_column(default=False)
+    role: Mapped[str] = mapped_column(String(16), default="primary", server_default="primary")
+    # comma-separated IPs: masters for secondary zones, forwarders for forward zones
+    primaries: Mapped[str] = mapped_column(String(512), default="", server_default="")
 
     view: Mapped[View | None] = relationship(lazy="joined")
     records: Mapped[list["Record"]] = relationship(back_populates="zone", cascade="all, delete-orphan")

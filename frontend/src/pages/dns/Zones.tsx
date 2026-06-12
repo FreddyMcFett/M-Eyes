@@ -16,7 +16,7 @@ export default function Zones() {
   const queryClient = useQueryClient();
   const [editorOpen, setEditorOpen] = useState(false);
   const [deleting, setDeleting] = useState<Zone | null>(null);
-  const [form, setForm] = useState({ name: '', kind: 'forward', network_id: '', view_id: '', dnssec: false });
+  const [form, setForm] = useState({ name: '', kind: 'forward', network_id: '', view_id: '', dnssec: false, role: 'primary', primaries: '' });
 
   const { data: zones = [], refetch } = useQuery({
     queryKey: ['zones'],
@@ -38,7 +38,9 @@ export default function Zones() {
         kind: form.kind,
         network_id: form.kind === 'reverse' && form.network_id ? Number(form.network_id) : undefined,
         view_id: form.view_id ? Number(form.view_id) : undefined,
-        dnssec_enabled: form.dnssec,
+        dnssec_enabled: form.role === 'primary' ? form.dnssec : false,
+        role: form.role,
+        primaries: form.primaries,
       }),
     onSuccess: () => {
       toast('success', 'Zone created');
@@ -81,6 +83,15 @@ export default function Zones() {
           },
           { header: 'Kind', searchText: (z: Zone) => z.kind, render: (z) => <StatusBadge value={z.kind} /> },
           {
+            header: 'Role',
+            searchText: (z: Zone) => z.role,
+            render: (z) => (
+              <span title={z.primaries ? `Servers: ${z.primaries}` : undefined}>
+                <StatusBadge value={z.role} />
+              </span>
+            ),
+          },
+          {
             header: 'View',
             searchText: (z: Zone) => z.view_name ?? 'default',
             render: (z) => <span className="font-mono">{z.view_name ?? 'default'}</span>,
@@ -101,7 +112,7 @@ export default function Zones() {
         rows={zones}
         rowKey={(z) => z.id}
         onCreate={() => {
-          setForm({ name: '', kind: 'forward', network_id: '', view_id: '', dnssec: false });
+          setForm({ name: '', kind: 'forward', network_id: '', view_id: '', dnssec: false, role: 'primary', primaries: '' });
           setEditorOpen(true);
         }}
         createLabel="Create Zone"
@@ -144,6 +155,26 @@ export default function Zones() {
         >
           <input className="f-input font-mono" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         </FormField>
+        <FormField label="Role" hint="primary = records managed here · secondary = transferred from external primaries · forward = queries forwarded">
+          <select className="f-input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+            <option value="primary">primary (authoritative)</option>
+            <option value="secondary">secondary (zone transfer)</option>
+            <option value="forward">forward (conditional forwarding)</option>
+          </select>
+        </FormField>
+        {form.role !== 'primary' && (
+          <FormField
+            label={form.role === 'secondary' ? 'Primary servers' : 'Forwarders'}
+            hint="Comma-separated IP addresses"
+          >
+            <input
+              className="f-input font-mono"
+              placeholder="192.0.2.10, 192.0.2.11"
+              value={form.primaries}
+              onChange={(e) => setForm({ ...form, primaries: e.target.value })}
+            />
+          </FormField>
+        )}
         <FormField label="DNS view" hint="Split-horizon: the zone is only served to clients matching the view">
           <select className="f-input" value={form.view_id} onChange={(e) => setForm({ ...form, view_id: e.target.value })}>
             <option value="">default (all clients)</option>
@@ -154,19 +185,25 @@ export default function Zones() {
             ))}
           </select>
         </FormField>
-        <FormField label="DNSSEC" hint="Sign the zone with BIND's default dnssec-policy">
-          <label className="flex items-center gap-2 text-table">
-            <input type="checkbox" checked={form.dnssec} onChange={(e) => setForm({ ...form, dnssec: e.target.checked })} />
-            Enable inline signing
-          </label>
-        </FormField>
+        {form.role === 'primary' && (
+          <FormField label="DNSSEC" hint="Sign the zone with BIND's default dnssec-policy">
+            <label className="flex items-center gap-2 text-table">
+              <input type="checkbox" checked={form.dnssec} onChange={(e) => setForm({ ...form, dnssec: e.target.checked })} />
+              Enable inline signing
+            </label>
+          </FormField>
+        )}
         <div className="flex justify-end gap-2 mt-4">
           <button className="f-btn-secondary" onClick={() => setEditorOpen(false)}>
             Cancel
           </button>
           <button
             className="f-btn-primary"
-            disabled={create.isPending || (!form.name && !(form.kind === 'reverse' && form.network_id))}
+            disabled={
+              create.isPending ||
+              (!form.name && !(form.kind === 'reverse' && form.network_id)) ||
+              (form.role !== 'primary' && !form.primaries)
+            }
             onClick={() => create.mutate()}
           >
             Create
