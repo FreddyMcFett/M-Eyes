@@ -4,6 +4,7 @@ import os
 os.environ.setdefault("MEYES_DATABASE_URL", "sqlite://")
 os.environ.setdefault("MEYES_BIND_OUTPUT_DIR", "/tmp/meyes-test/bind")
 os.environ.setdefault("MEYES_KEA_OUTPUT_DIR", "/tmp/meyes-test/kea")
+os.environ.setdefault("MEYES_TLS_DIR", "/tmp/meyes-test/tls")
 
 import pytest
 from fastapi.testclient import TestClient

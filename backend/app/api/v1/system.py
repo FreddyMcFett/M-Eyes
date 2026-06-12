@@ -9,7 +9,7 @@ from app.config import get_settings
 from app.database import get_db
 from app.models import Deployment, Event, Network, Record, User, Zone
 from app.schemas.system import SettingsIn, SettingsOut
-from app.services import app_settings, audit, events
+from app.services import app_settings, audit, certs, events
 from app.version import __version__
 
 router = APIRouter(prefix="/system", tags=["system"])
@@ -30,6 +30,10 @@ def update_app_settings(payload: SettingsIn, db: Session = Depends(get_db),
                         user: User = Depends(get_current_user)):
     values = app_settings.set_many(db, payload.values)
     events.reset_syslog()
+    # Republish TLS/proxy snippets when an HTTPS-affecting setting changed.
+    if any(k in payload.values for k in
+           ("https_redirect", "hsts_enabled", "hsts_max_age", "tls_min_version")):
+        certs.materialize(db)
     events.emit(db, "info", "system", f"Settings updated by {user.username}",
                 {"keys": sorted(payload.values.keys())})
     db.commit()
