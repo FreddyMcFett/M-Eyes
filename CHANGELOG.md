@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+## [1.3.1](https://github.com/FreddyMcFett/M-Eyes/compare/v1.3.0...v1.3.1) (2026-06-12)
+
+
+### Bug Fixes
+
+* **security:** close zone-file/RPZ injection, runbook XSS, and harden deployment secrets ([40a3f97](https://github.com/FreddyMcFett/M-Eyes/commit/40a3f97d8ccfdf0516961d454db956a271c0d171))
+
 # [1.3.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.2.1...v1.3.0) (2026-06-12)
 
 
