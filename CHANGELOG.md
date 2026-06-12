@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+## [1.2.1](https://github.com/FreddyMcFett/M-Eyes/compare/v1.2.0...v1.2.1) (2026-06-12)
+
+
+### Bug Fixes
+
+* **ci:** enable GitHub Pages from Docs workflow; add logo and architecture diagram ([b719df7](https://github.com/FreddyMcFett/M-Eyes/commit/b719df7c90eea1fcc76b5ca25488f2f3eb10753e))
+
 # [1.2.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.1.0...v1.2.0) (2026-06-12)
 
 
