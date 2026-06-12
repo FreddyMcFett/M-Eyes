@@ -1,27 +1,9 @@
 # Architecture
 
-```
-                  ┌────────────────────────────────────────────┐
-                  │                 Browser (SPA)              │
-                  │   React 18 + TS, FortiOS-style UI          │
-                  └───────────────┬────────────────────────────┘
-                                  │ /api /feeds  (nginx in compose, vite proxy in dev)
-                  ┌───────────────▼────────────────────────────┐
-                  │             M-Eyes API (FastAPI)           │
-                  │  routers → services → models (SQLAlchemy)  │
-                  │  audit/changelog · events/syslog · SSE     │
-                  └──────┬──────────────┬──────────────┬───────┘
-                         │              │              │
-                  PostgreSQL     zone files +     kea-dhcp4.conf
-                  (SQLite dev)   zones.conf            │
-                         │              │              │
-                         │       ┌──────▼─────┐  ┌─────▼─────────────┐
-                         │       │   BIND9    │  │ Kea DHCP4 + CtrlA │
-                         │       │ rndc reload│  │ config-reload API │
-                         │       └────────────┘  └───────────────────┘
-                         │
-                  FortiGate(s) pull /feeds/*.txt as External Resources
-```
+![M-Eyes solution architecture](img/architecture.svg)
+
+In development the Vite dev server takes the place of nginx (`/api` and `/feeds` are
+proxied to the backend); in Docker Compose nginx terminates TLS and serves the built SPA.
 
 ## Control plane / engine split
 

@@ -3,6 +3,8 @@ site_description: Open-source DDI platform (DNS, DHCP, IPAM) with Fortinet ecosy
 repo_url: https://github.com/FreddyMcFett/M-Eyes
 theme:
   name: material
+  logo: img/logo.svg
+  favicon: img/favicon.png
   palette:
     primary: teal
     accent: green
