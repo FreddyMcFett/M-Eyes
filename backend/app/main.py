@@ -30,6 +30,7 @@ from app.api.v1 import (
     views,
     zones,
 )
+from app.config import DEFAULT_JWT_SECRET, get_settings
 from app.database import SessionLocal, engine
 from app.feeds.router import router as feeds_router
 from app.models import Base, User
@@ -69,9 +70,18 @@ def seed_admin() -> None:
             logger.info("Seeded default admin user (admin/admin) - change the password!")
 
 
+def _warn_insecure_defaults() -> None:
+    if get_settings().jwt_secret == DEFAULT_JWT_SECRET:
+        logger.warning(
+            "MEYES_JWT_SECRET is the built-in development default; set a strong, unique "
+            "secret in production - tokens are otherwise forgeable by anyone."
+        )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(engine)
+    _warn_insecure_defaults()
     seed_admin()
     with SessionLocal() as db:
         certs_service.ensure_bootstrap(db)
@@ -90,7 +100,7 @@ def create_app() -> FastAPI:
     )
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=get_settings().cors_origins_list,
         allow_methods=["*"],
         allow_headers=["*"],
     )

@@ -8,6 +8,20 @@ KEA_DIR="${MEYES_KEA_OUTPUT_DIR:-/shared/kea}"
 mkdir -p "$BIND_DIR" "$KEA_DIR"
 [ -f "$BIND_DIR/zones.conf" ] || : > "$BIND_DIR/zones.conf"
 [ -f "$BIND_DIR/rpz-options.conf" ] || : > "$BIND_DIR/rpz-options.conf"
+
+# Generate a unique rndc control key on first boot instead of shipping a static
+# secret in the image/repo. BIND and the API share it through this volume.
+RNDC_KEY_FILE="${MEYES_RNDC_KEY_FILE:-$BIND_DIR/rndc.key}"
+if [ ! -f "$RNDC_KEY_FILE" ]; then
+  RNDC_SECRET="$(head -c 32 /dev/urandom | base64)"
+  cat > "$RNDC_KEY_FILE" <<EOF
+key "rndc-key" {
+    algorithm hmac-sha256;
+    secret "$RNDC_SECRET";
+};
+EOF
+  chmod 644 "$RNDC_KEY_FILE"
+fi
 if [ ! -f "$KEA_DIR/kea-dhcp4.conf" ]; then
   cat > "$KEA_DIR/kea-dhcp4.conf" <<'EOF'
 {

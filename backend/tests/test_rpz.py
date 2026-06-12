@@ -78,3 +78,17 @@ def test_rpz_policy_moves_into_views(client, auth_headers, db_session):
     # with views, the policy is emitted per view instead of globally
     assert conf.count('response-policy { zone "rpz.m-eyes"; }') == 2  # internal + default
     assert "response-policy" not in render_rpz_options(db_session)
+
+
+def test_substitute_rejects_zone_file_injection(client, auth_headers):
+    # the substitute value is rendered verbatim into the RPZ zone; a newline or a
+    # non IP/FQDN value must be rejected so it cannot inject extra zone records
+    bad_newline = _rule(client, auth_headers, fqdn="a.example.com", action="substitute",
+                        substitute="10.0.0.1\n*.evil IN A 6.6.6.6")
+    assert bad_newline.status_code == 422
+    bad_value = _rule(client, auth_headers, fqdn="b.example.com", action="substitute",
+                     substitute="not a host")
+    assert bad_value.status_code == 422
+    ok = _rule(client, auth_headers, fqdn="c.example.com", action="substitute",
+               substitute="good.example.com")
+    assert ok.status_code == 201, ok.text

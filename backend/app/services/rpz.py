@@ -36,9 +36,21 @@ def _validate(data: dict) -> None:
             detail=f"Unsupported action {data.get('action')!r}; one of {', '.join(RPZ_ACTIONS)}",
         )
     if data["action"] == "substitute":
-        if not data.get("substitute"):
+        substitute = (data.get("substitute") or "").strip()
+        if not substitute:
             raise HTTPException(status_code=422,
                                 detail="The substitute action requires a substitute IP or FQDN")
+        # the substitute is rendered verbatim into the RPZ zone file; only accept a
+        # literal IP address or a valid FQDN so it cannot inject extra zone records
+        try:
+            ipaddress.ip_address(substitute)
+        except ValueError:
+            if not _FQDN_RE.match(substitute.rstrip(".").lower()):
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Substitute must be a valid IP or FQDN, got {substitute!r}",
+                ) from None
+        data["substitute"] = substitute
     else:
         data["substitute"] = ""
 
