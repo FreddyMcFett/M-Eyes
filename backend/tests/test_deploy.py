@@ -135,7 +135,8 @@ def test_bind_preview(client, auth_headers):
     _setup_zone(client, auth_headers)
     preview = client.get("/api/v1/deploy/bind/preview", headers=auth_headers).json()
     assert 'zone "deploy.example"' in preview["zones_conf"]
-    assert "deploy.example" in preview["zone_files"]
+    assert "db.deploy.example" in preview["zone_files"]
+    assert "rpz_options" in preview
 
 
 def test_deploy_status_endpoint(client, auth_headers):

@@ -6,7 +6,7 @@ from app.api.deps import get_current_user
 from app.database import get_db
 from app.models import Network, User
 from app.schemas.ipam import NetworkIn, NetworkOut, NetworkUpdate, UtilizationOut
-from app.services import ipam
+from app.services import discovery, ipam
 
 router = APIRouter(prefix="/networks", tags=["ipam"])
 
@@ -65,3 +65,14 @@ def delete_network(network_id: int, db: Session = Depends(get_db),
 def next_ip(network_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     network = _get_or_404(db, network_id)
     return {"ip": ipam.next_available_ip(db, network)}
+
+
+@router.post("/{network_id}/discover")
+def discover(network_id: int, db: Session = Depends(get_db),
+             user: User = Depends(get_current_user)):
+    """Ping sweep: record responding addresses as 'discovered', refresh last_seen,
+    and flag conflicts."""
+    network = _get_or_404(db, network_id)
+    result = discovery.discover(db, user.username, network)
+    db.commit()
+    return result

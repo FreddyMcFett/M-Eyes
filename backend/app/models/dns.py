@@ -6,11 +6,26 @@ from app.models.base import Base, TimestampMixin
 RECORD_TYPES = ("A", "AAAA", "CNAME", "MX", "TXT", "NS", "PTR", "SRV")
 
 
-class Zone(Base, TimestampMixin):
-    __tablename__ = "zones"
+class View(Base, TimestampMixin):
+    """Split-horizon DNS view (Infoblox-style). Zones without a view land in the
+    implicit catch-all 'default' view, which always matches last."""
+
+    __tablename__ = "dns_views"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    # comma-separated BIND ACL elements: any|none|localhost|localnets|CIDR (optionally !negated)
+    match_clients: Mapped[str] = mapped_column(String(512), default="any")
+    description: Mapped[str] = mapped_column(String(255), default="")
+    position: Mapped[int] = mapped_column(Integer, default=0)  # evaluation order, lowest first
+
+
+class Zone(Base, TimestampMixin):
+    __tablename__ = "zones"
+    __table_args__ = (UniqueConstraint("name", "view_id", name="uq_zone_name_view"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), index=True)
     kind: Mapped[str] = mapped_column(String(16), default="forward")  # forward|reverse
     serial: Mapped[int] = mapped_column(Integer, default=1)
     default_ttl: Mapped[int] = mapped_column(Integer, default=3600)
@@ -23,7 +38,12 @@ class Zone(Base, TimestampMixin):
     network_id: Mapped[int | None] = mapped_column(
         ForeignKey("networks.id", ondelete="SET NULL"), nullable=True
     )
+    view_id: Mapped[int | None] = mapped_column(
+        ForeignKey("dns_views.id", ondelete="SET NULL"), nullable=True
+    )
+    dnssec_enabled: Mapped[bool] = mapped_column(default=False)
 
+    view: Mapped[View | None] = relationship(lazy="joined")
     records: Mapped[list["Record"]] = relationship(back_populates="zone", cascade="all, delete-orphan")
 
 

@@ -1,0 +1,13 @@
+; M-Eyes generated DNS firewall (RPZ) zone - do not edit by hand
+; zone: {{ zone_name }}  config version: {{ config_version }}
+$TTL 60
+@   IN  SOA {{ soa_mname }} {{ soa_rname }} (
+        {{ serial }} ; serial
+        3600 ; refresh
+        600 ; retry
+        86400 ; expire
+        60 ) ; minimum
+    IN  NS  localhost.
+{% for row in rows %}
+{{ "%-40s"|format(row.name) }} IN {{ "%-6s"|format(row.type) }} {{ row.value }}
+{% endfor %}

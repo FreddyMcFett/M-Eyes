@@ -1,8 +1,33 @@
 // M-Eyes generated BIND zone declarations - do not edit by hand
 // config version: {{ config_version }}
-{% for zone in zones %}
-zone "{{ zone.name }}" {
-    type master;
-    file "{{ zone_dir }}/db.{{ zone.name }}";
+{% macro zone_block(z, indent) %}
+{{ indent }}zone "{{ z.name }}" {
+{{ indent }}    type master;
+{{ indent }}    file "{{ zone_dir }}/{{ z.filename }}";
+{% if z.dnssec %}
+{{ indent }}    dnssec-policy default;
+{{ indent }}    inline-signing yes;
+{% endif %}
+{{ indent }}};
+{% endmacro %}
+{% if use_views %}
+{% for view in views %}
+view "{{ view.name }}" {
+    match-clients { {{ view.match_clients }} };
+{% for z in view.zones %}
+{{ zone_block(z, '    ') -}}
+{% endfor %}
+{% if rpz %}
+{{ zone_block(rpz, '    ') -}}
+    response-policy { zone "{{ rpz.name }}"; } qname-wait-recurse no break-dnssec yes;
+{% endif %}
 };
 {% endfor %}
+{% else %}
+{% for z in default_zones %}
+{{ zone_block(z, '') -}}
+{% endfor %}
+{% if rpz %}
+{{ zone_block(rpz, '') -}}
+{% endif %}
+{% endif %}

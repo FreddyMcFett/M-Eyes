@@ -13,7 +13,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.generators.named_conf import render_zones_conf
+from app.generators.named_conf import render_rpz_options, render_zones_conf, rpz_active, zone_filename
+from app.generators.rpz_zone import render_rpz_zone
 from app.generators.zonefile import render_zone
 from app.models import Deployment, Zone
 from app.services import audit, events
@@ -21,10 +22,15 @@ from app.services import audit, events
 
 def preview(db: Session) -> dict:
     zones = db.scalars(select(Zone).order_by(Zone.name)).all()
-    return {
+    result = {
         "zones_conf": render_zones_conf(db),
-        "zone_files": {zone.name: render_zone(db, zone) for zone in zones},
+        "rpz_options": render_rpz_options(db),
+        # keyed by file name: the same zone name may exist in several views
+        "zone_files": {zone_filename(zone): render_zone(db, zone) for zone in zones},
     }
+    if rpz_active(db):
+        result["zone_files"][f"db.{get_settings().rpz_zone_name}"] = render_rpz_zone(db)
+    return result
 
 
 def _checkzone(zone_name: str, path: Path) -> tuple[bool, str]:
@@ -65,16 +71,20 @@ def deploy(db: Session, actor: str, debug: bool = False) -> dict:
 
     # 1. render to staging
     (staging / "zones.conf").write_text(rendered["zones_conf"])
-    for zone in zones:
-        (staging / f"db.{zone.name}").write_text(rendered["zone_files"][zone.name])
+    (staging / "rpz-options.conf").write_text(rendered["rpz_options"])
+    to_check = [(zone.name, zone_filename(zone)) for zone in zones]
+    if rpz_active(db):
+        to_check.append((settings.rpz_zone_name, f"db.{settings.rpz_zone_name}"))
+    for _zone_name, filename in to_check:
+        (staging / filename).write_text(rendered["zone_files"][filename])
 
     # 2. validate
     check_output = []
-    for zone in zones:
-        ok, output = _checkzone(zone.name, staging / f"db.{zone.name}")
-        check_output.append(f"{zone.name}: {output.strip()}")
+    for zone_name, filename in to_check:
+        ok, output = _checkzone(zone_name, staging / filename)
+        check_output.append(f"{zone_name}: {output.strip()}")
         if not ok:
-            message = f"Zone validation failed for {zone.name}: {output.strip()}"
+            message = f"Zone validation failed for {zone_name}: {output.strip()}"
             db.add(Deployment(target="bind", status="failed", message=message, config_version=version))
             db.flush()
             events.emit(db, "error", "deploy", message)

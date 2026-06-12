@@ -14,14 +14,18 @@ from app.api.v1 import (
     dashboard,
     deploy,
     dhcp,
+    extattrs,
     feeds_admin,
     hosts,
     logs,
     networks,
     records,
+    rpz,
     runbook,
+    search,
     system,
     tags,
+    views,
     zones,
 )
 from app.database import SessionLocal, engine
@@ -66,9 +70,10 @@ def create_app() -> FastAPI:
 
     api_routers = (
         auth.router, dashboard.router, networks.router, addresses.router, tags.router,
-        zones.router, records.router, dhcp.router, hosts.router, feeds_admin.router,
-        blocklist.router, changelog.router, deploy.router, runbook.router, logs.router,
-        system.router,
+        zones.router, views.router, records.router, dhcp.router, hosts.router,
+        feeds_admin.router, blocklist.router, changelog.router, deploy.router,
+        runbook.router, logs.router, system.router, rpz.router, extattrs.router,
+        search.router,
     )
     for router in api_routers:
         app.include_router(router, prefix="/api/v1")

@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import DhcpRange, DhcpSubnet, IPAddress, Network, Tag
-from app.services import audit, events
+from app.services import audit, events, extattrs
 
 MAX_SCAN_PREFIX = 16  # refuse next-free-IP scans for networks larger than a /16
 
@@ -98,6 +98,9 @@ def delete_network(db: Session, actor: str, network: Network) -> None:
     cidr = network.cidr
     for child in db.scalars(select(Network).where(Network.parent_id == network.id)).all():
         child.parent_id = network.parent_id
+    for ip_row in network.ip_addresses:
+        extattrs.purge(db, "ip_address", ip_row.id)
+    extattrs.purge(db, "network", network.id)
     db.delete(network)
     db.flush()
     audit.record(db, actor, "delete", "network", before["id"], before, None,
@@ -194,6 +197,7 @@ def update_ip(db: Session, actor: str, record: IPAddress, data: dict) -> IPAddre
 def delete_ip(db: Session, actor: str, record: IPAddress) -> None:
     before = audit.snapshot(record)
     ip_value = record.ip
+    extattrs.purge(db, "ip_address", record.id)
     db.delete(record)
     db.flush()
     audit.record(db, actor, "delete", "ip_address", before["id"], before, None,

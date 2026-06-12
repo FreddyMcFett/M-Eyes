@@ -10,7 +10,9 @@ import {
   Globe,
   History,
   LayoutDashboard,
+  Layers,
   List,
+  ListChecks,
   LogOut,
   Network as NetworkIcon,
   Rss,
@@ -18,10 +20,13 @@ import {
   Settings as SettingsIcon,
   Shield,
   ShieldBan,
+  ShieldOff,
+  Tags,
   User,
 } from 'lucide-react';
 import { api, clearToken } from '../api/client';
 import { EngineStatus } from '../api/types';
+import GlobalSearch from './GlobalSearch';
 
 interface NavItem {
   to: string;
@@ -42,7 +47,9 @@ const SECTIONS: NavSection[] = [
     items: [
       { to: '/ipam', label: 'IPAM', icon: <List size={14} /> },
       { to: '/dns', label: 'DNS', icon: <Globe size={14} /> },
+      { to: '/dns-views', label: 'DNS Views', icon: <Layers size={14} /> },
       { to: '/dhcp', label: 'DHCP', icon: <Server size={14} /> },
+      { to: '/leases', label: 'Leases', icon: <ListChecks size={14} /> },
       { to: '/hosts', label: 'Hosts', icon: <Activity size={14} /> },
     ],
   },
@@ -52,6 +59,7 @@ const SECTIONS: NavSection[] = [
     items: [
       { to: '/feeds', label: 'Fortinet Feeds', icon: <Rss size={14} /> },
       { to: '/blocklist', label: 'Blocklist', icon: <ShieldBan size={14} /> },
+      { to: '/dnsfw', label: 'DNS Firewall', icon: <ShieldOff size={14} /> },
     ],
   },
   {
@@ -143,6 +151,9 @@ export default function AppShell() {
             <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
               <SettingsIcon size={15} /> System
             </div>
+            <NavLink to="/extattrs" className={linkClass}>
+              <Tags size={14} /> Extensible Attrs
+            </NavLink>
             <NavLink to="/settings" className={linkClass}>
               <SettingsIcon size={14} /> Settings
             </NavLink>
@@ -161,6 +172,7 @@ export default function AppShell() {
             config v{info?.config_version ?? 0}
           </span>
           <div className="ml-auto flex items-center gap-4">
+            <GlobalSearch />
             <EngineDot status={engines?.bind.last_status ?? null} label="BIND" />
             <EngineDot status={engines?.kea.last_status ?? null} label="Kea" />
             <span className="flex items-center gap-1.5 text-xs text-slate-300">

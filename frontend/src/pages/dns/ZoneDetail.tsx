@@ -6,6 +6,7 @@ import { api } from '../../api/client';
 import { DnsRecord, Zone } from '../../api/types';
 import DataTable from '../../components/DataTable';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import ExtAttrPanel from '../../components/ExtAttrPanel';
 import FormField from '../../components/FormField';
 import Modal from '../../components/Modal';
 import SlideOver from '../../components/SlideOver';
@@ -88,6 +89,14 @@ export default function ZoneDetail() {
         </Link>
         <h1 className="text-lg font-semibold font-mono">{zone?.name}</h1>
         <span className="text-muted text-table">serial {zone?.serial}</span>
+        <span className="px-2 py-0.5 rounded bg-slate-200 text-xs font-mono">
+          view: {zone?.view_name ?? 'default'}
+        </span>
+        {zone?.dnssec_enabled && (
+          <span className="px-2 py-0.5 rounded bg-accent/20 text-accent text-xs font-semibold">
+            DNSSEC
+          </span>
+        )}
       </div>
 
       {zone && (
@@ -149,6 +158,8 @@ export default function ZoneDetail() {
           </button>
         }
       />
+
+      {id && <ExtAttrPanel objectType="zone" objectId={id} />}
 
       <SlideOver title="Add Record" open={editorOpen} onClose={() => setEditorOpen(false)}>
         <FormField label="Name" hint="Relative name; use @ for the zone apex">

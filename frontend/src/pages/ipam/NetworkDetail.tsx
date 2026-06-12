@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Trash2, Wand2 } from 'lucide-react';
+import { ArrowLeft, Radar, Trash2, Wand2 } from 'lucide-react';
 import { api } from '../../api/client';
-import { IPAddress, Network } from '../../api/types';
+import { DiscoveryResult, IPAddress, Network } from '../../api/types';
 import DataTable from '../../components/DataTable';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import ExtAttrPanel from '../../components/ExtAttrPanel';
 import FormField from '../../components/FormField';
 import SlideOver from '../../components/SlideOver';
 import StatusBadge from '../../components/StatusBadge';
@@ -65,6 +66,18 @@ export default function NetworkDetail() {
     onError: (err: Error) => toast('error', err.message),
   });
 
+  const discover = useMutation({
+    mutationFn: () => api.post<DiscoveryResult>(`/api/v1/networks/${id}/discover`),
+    onSuccess: (result) => {
+      toast(
+        result.conflicts > 0 ? 'error' : 'success',
+        `Discovery: ${result.alive} alive, ${result.created} new, ${result.conflicts} conflict(s)`,
+      );
+      invalidate();
+    },
+    onError: (err: Error) => toast('error', err.message),
+  });
+
   const suggestIp = async () => {
     try {
       const result = await api.get<{ ip: string }>(`/api/v1/networks/${id}/next-ip`);
@@ -107,6 +120,10 @@ export default function NetworkDetail() {
           { header: 'MAC', searchText: (a: IPAddress) => a.mac, render: (a) => <span className="font-mono">{a.mac || '—'}</span> },
           { header: 'Description', searchText: (a: IPAddress) => a.description, render: (a) => <span>{a.description || '—'}</span> },
           {
+            header: 'Last seen',
+            render: (a) => <span>{a.last_seen ? new Date(a.last_seen).toLocaleString() : '—'}</span>,
+          },
+          {
             header: 'Actions',
             render: (a) => (
               <button onClick={() => setDeleting(a)} className="text-danger hover:opacity-70" title="Release">
@@ -124,7 +141,19 @@ export default function NetworkDetail() {
         createLabel="Allocate IP"
         onRefresh={() => refetch()}
         emptyText="No addresses allocated in this network"
+        toolbar={
+          <button
+            className="f-btn-secondary"
+            disabled={discover.isPending}
+            onClick={() => discover.mutate()}
+            title="Ping sweep: record live hosts as 'discovered' and flag conflicts"
+          >
+            <Radar size={14} /> {discover.isPending ? 'Discovering…' : 'Discover'}
+          </button>
+        }
       />
+
+      {id && <ExtAttrPanel objectType="network" objectId={id} />}
 
       <SlideOver title="Allocate IP address" open={editorOpen} onClose={() => setEditorOpen(false)}>
         <FormField label="IP address" hint="Leave empty to auto-allocate the next free address">

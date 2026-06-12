@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     dns_default_soa_rname: str = "hostmaster.m-eyes.local."
     dns_default_ttl: int = 3600
 
+    # DNS firewall (Response Policy Zone)
+    rpz_zone_name: str = "rpz.m-eyes"
+
 
 @lru_cache
 def get_settings() -> Settings:

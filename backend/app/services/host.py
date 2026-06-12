@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import DhcpReservation, DhcpSubnet, Host, IPAddress, Network, Record
-from app.services import audit, events, ipam
+from app.services import audit, events, extattrs, ipam
 from app.services import dhcp as dhcp_service
 from app.services import dns as dns_service
 
@@ -86,6 +86,7 @@ def delete_host(db: Session, actor: str, host: Host) -> None:
         if ip_row is not None:
             ipam.delete_ip(db, actor, ip_row)
 
+    extattrs.purge(db, "host", host.id)
     db.delete(host)
     db.flush()
     audit.record(db, actor, "delete", "host", before["id"], before, None,

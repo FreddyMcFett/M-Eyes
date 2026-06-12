@@ -12,10 +12,13 @@ automatic configuration versioning and self-generating documentation.
 
 | Area | Highlights |
 |---|---|
-| **IPAM** | network containers & subnets, IP inventory, next-free-IP allocation, utilization, VLAN/site metadata, tags |
-| **DNS** | forward & reverse zones, A/AAAA/CNAME/MX/TXT/NS/PTR/SRV, automatic PTR management, SOA serial handling, zone-file preview, one-click deploy to BIND9 (`named-checkzone` validated, `rndc` reload) |
-| **DHCP** | scopes mapped to IPAM networks, ranges, MAC reservations (mirrored into IPAM), options, deploy to Kea via Control Agent |
+| **IPAM** | network containers & subnets, IP inventory, next-free-IP allocation, utilization, VLAN/site metadata, tags, **network discovery** (ping sweep with conflict detection) |
+| **DNS** | forward & reverse zones, A/AAAA/CNAME/MX/TXT/NS/PTR/SRV, automatic PTR management, SOA serial handling, **split-horizon views** (match-clients ACLs), **DNSSEC** inline signing per zone, zone-file preview, one-click deploy to BIND9 (`named-checkzone` validated, `rndc` reload) |
+| **DNS Firewall** | Infoblox-style RPZ: block / NXDOMAIN, NODATA, passthru and substitute rules per domain (subdomains included), generated as a BIND Response Policy Zone |
+| **DHCP** | scopes mapped to IPAM networks, ranges, MAC reservations (mirrored into IPAM), options, deploy to Kea via Control Agent, **live lease viewer** |
 | **Hosts** | composite create: IP + A + PTR + DHCP reservation in one call — and one delete to reverse it |
+| **Extensible Attributes** | typed, admin-defined metadata (string / integer / email / URL / date / enum) attachable to networks, IPs, zones, records and hosts |
+| **Search** | global search across networks, IPs, zones, records, hosts and firewall rules from the top bar |
 | **Fortinet** | token-protected External Resource feeds (subnets / tagged objects / blocklist / FQDNs), per-feed FortiGate CLI snippets, token rotation, syslog forwarding to FortiAnalyzer or any collector |
 | **Versioning** | immutable changelog with before/after diffs, global config version, one-click rollback, auto-generated Markdown runbook, deploy-drift display |
 | **Operations** | live dashboard (SSE event stream + polling), event log with live tail, debug mode, engine connectivity tests, diagnostics bundle |
