@@ -13,6 +13,16 @@ class NetworkIn(BaseModel):
     tag_ids: list[int] | None = None
 
 
+class SubnetAllocateIn(BaseModel):
+    prefixlen: int
+    name: str = ""
+    description: str = ""
+    is_container: bool = False
+    vlan: int | None = None
+    site: str = ""
+    tag_ids: list[int] | None = None
+
+
 class NetworkUpdate(BaseModel):
     cidr: str | None = None
     name: str | None = None

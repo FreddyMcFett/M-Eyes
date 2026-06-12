@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.database import get_db
 from app.models import Network, User
-from app.schemas.ipam import NetworkIn, NetworkOut, NetworkUpdate, UtilizationOut
+from app.schemas.ipam import NetworkIn, NetworkOut, NetworkUpdate, SubnetAllocateIn, UtilizationOut
 from app.services import discovery, ipam
 
 router = APIRouter(prefix="/networks", tags=["ipam"])
@@ -65,6 +65,26 @@ def delete_network(network_id: int, db: Session = Depends(get_db),
 def next_ip(network_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     network = _get_or_404(db, network_id)
     return {"ip": ipam.next_available_ip(db, network)}
+
+
+@router.get("/{network_id}/next-subnet")
+def next_subnet(network_id: int, prefixlen: int, db: Session = Depends(get_db),
+                user: User = Depends(get_current_user)):
+    """Next free child CIDR of the requested size (nothing is created)."""
+    network = _get_or_404(db, network_id)
+    return {"cidr": ipam.next_available_subnet(db, network, prefixlen)}
+
+
+@router.post("/{network_id}/allocate-subnet", response_model=NetworkOut, status_code=201)
+def allocate_subnet(network_id: int, payload: SubnetAllocateIn, db: Session = Depends(get_db),
+                    user: User = Depends(get_current_user)):
+    """Allocate (create) the next free child subnet inside a container network."""
+    container = _get_or_404(db, network_id)
+    cidr = ipam.next_available_subnet(db, container, payload.prefixlen)
+    data = payload.model_dump(exclude={"prefixlen"})
+    network = ipam.create_network(db, user.username, {"cidr": cidr, **data})
+    db.commit()
+    return _with_utilization(db, network)
 
 
 @router.post("/{network_id}/discover")

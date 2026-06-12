@@ -62,6 +62,8 @@ export interface Zone {
   view_id: number | null;
   view_name: string | null;
   dnssec_enabled: boolean;
+  role: string;
+  primaries: string;
   record_count: number;
 }
 
@@ -189,6 +191,37 @@ export interface RpzRule {
   substitute: string;
   comment: string;
   enabled: boolean;
+}
+
+export interface ThreatFeed {
+  id: number;
+  name: string;
+  url: string;
+  action: string;
+  enabled: boolean;
+  refresh_hours: number;
+  last_synced: string | null;
+  last_status: string;
+  entry_count: number;
+}
+
+export interface ApiKey {
+  id: number;
+  name: string;
+  prefix: string;
+  role: string;
+  expires_at: string | null;
+  last_used_at: string | null;
+  created_at: string;
+  key?: string; // present only in the create response
+}
+
+export interface UpdateStatus {
+  current_version: string;
+  latest_version: string | null;
+  update_available: boolean;
+  release_url: string;
+  error: string | null;
 }
 
 export interface ExtAttrDef {

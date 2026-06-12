@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.models import Network, Record, View, Zone
-from app.models.dns import RECORD_TYPES
+from app.models.dns import RECORD_TYPES, ZONE_ROLES
 from app.services import audit, events, extattrs
 
 _NAME_RE = re.compile(r"^(@|\*|[A-Za-z0-9_]([A-Za-z0-9_\-\.\*]*[A-Za-z0-9_])?)$")
@@ -91,6 +91,27 @@ def _check_view_and_duplicate(db: Session, name: str, view_id: int | None,
         raise HTTPException(status_code=409, detail=f"Zone {name} already exists in {where}")
 
 
+def _validate_role(data: dict) -> None:
+    role = data.setdefault("role", "primary")
+    if role not in ZONE_ROLES:
+        raise HTTPException(status_code=422,
+                            detail=f"Unsupported zone role {role!r}; one of {', '.join(ZONE_ROLES)}")
+    if role == "primary":
+        data["primaries"] = ""
+        return
+    servers = [token.strip() for token in (data.get("primaries") or "").split(",") if token.strip()]
+    label = "primary servers" if role == "secondary" else "forwarders"
+    if not servers:
+        raise HTTPException(status_code=422, detail=f"A {role} zone requires at least one IP in {label}")
+    for server in servers:
+        try:
+            ipaddress.ip_address(server)
+        except ValueError:
+            raise HTTPException(status_code=422,
+                                detail=f"Invalid IP {server!r} in {label}") from None
+    data["primaries"] = ",".join(servers)
+
+
 def create_zone(db: Session, actor: str, data: dict) -> Zone:
     settings = get_settings()
     if data.get("kind") == "reverse" and data.get("network_id") and not data.get("name"):
@@ -103,15 +124,17 @@ def create_zone(db: Session, actor: str, data: dict) -> Zone:
         raise HTTPException(status_code=422, detail="Zone name is required")
     data["name"] = name
     _check_view_and_duplicate(db, name, data.get("view_id"))
+    _validate_role(data)
     data.setdefault("soa_mname", settings.dns_default_soa_mname)
     data.setdefault("soa_rname", settings.dns_default_soa_rname)
     data.setdefault("default_ttl", settings.dns_default_ttl)
     zone = Zone(**data)
     db.add(zone)
     db.flush()
-    # apex NS record so the generated zone file is loadable by BIND
-    db.add(Record(zone_id=zone.id, name="@", type="NS", value=zone.soa_mname))
-    db.flush()
+    if zone.role == "primary":
+        # apex NS record so the generated zone file is loadable by BIND
+        db.add(Record(zone_id=zone.id, name="@", type="NS", value=zone.soa_mname))
+        db.flush()
     audit.record(db, actor, "create", "zone", zone.id, None, audit.snapshot(zone),
                  summary=f"Created zone {zone.name}")
     events.emit(db, "info", "dns", f"Zone {zone.name} created", {"id": zone.id})
@@ -122,6 +145,11 @@ def update_zone(db: Session, actor: str, zone: Zone, data: dict) -> Zone:
     before = audit.snapshot(zone)
     data.pop("name", None)  # renaming a zone is delete + recreate
     data.pop("serial", None)
+    if "role" in data or "primaries" in data:
+        merged = {"role": data.get("role", zone.role),
+                  "primaries": data.get("primaries", zone.primaries)}
+        _validate_role(merged)
+        data["role"], data["primaries"] = merged["role"], merged["primaries"]
     if "view_id" in data and data["view_id"] != zone.view_id:
         _check_view_and_duplicate(db, zone.name, data["view_id"], exclude_id=zone.id)
     for key, value in data.items():
@@ -172,6 +200,11 @@ def _validate_record(data: dict) -> None:
 
 
 def create_record(db: Session, actor: str, zone: Zone, data: dict, auto_ptr: bool = False) -> Record:
+    if zone.role != "primary":
+        raise HTTPException(
+            status_code=422,
+            detail=f"Records can only be managed on primary zones ({zone.name} is {zone.role})",
+        )
     data["name"] = data["name"].strip() or "@"
     _validate_record(data)
     duplicate = db.scalar(

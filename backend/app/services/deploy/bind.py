@@ -25,8 +25,10 @@ def preview(db: Session) -> dict:
     result = {
         "zones_conf": render_zones_conf(db),
         "rpz_options": render_rpz_options(db),
-        # keyed by file name: the same zone name may exist in several views
-        "zone_files": {zone_filename(zone): render_zone(db, zone) for zone in zones},
+        # keyed by file name: the same zone name may exist in several views;
+        # secondary/forward zones have no local file - BIND fetches or forwards
+        "zone_files": {zone_filename(zone): render_zone(db, zone)
+                       for zone in zones if zone.role == "primary"},
     }
     if rpz_active(db):
         result["zone_files"][f"db.{get_settings().rpz_zone_name}"] = render_rpz_zone(db)
@@ -72,7 +74,7 @@ def deploy(db: Session, actor: str, debug: bool = False) -> dict:
     # 1. render to staging
     (staging / "zones.conf").write_text(rendered["zones_conf"])
     (staging / "rpz-options.conf").write_text(rendered["rpz_options"])
-    to_check = [(zone.name, zone_filename(zone)) for zone in zones]
+    to_check = [(zone.name, zone_filename(zone)) for zone in zones if zone.role == "primary"]
     if rpz_active(db):
         to_check.append((settings.rpz_zone_name, f"db.{settings.rpz_zone_name}"))
     for _zone_name, filename in to_check:

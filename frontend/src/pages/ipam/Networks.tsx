@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Folder, Pencil, Trash2 } from 'lucide-react';
+import { FolderPlus, Folder, Pencil, Trash2 } from 'lucide-react';
 import { api } from '../../api/client';
 import { Network, Tag } from '../../api/types';
 import DataTable from '../../components/DataTable';
@@ -30,6 +30,8 @@ export default function Networks() {
   const [editing, setEditing] = useState<Network | null>(null);
   const [form, setForm] = useState<NetworkForm>(EMPTY);
   const [deleting, setDeleting] = useState<Network | null>(null);
+  const [allocating, setAllocating] = useState<Network | null>(null);
+  const [allocForm, setAllocForm] = useState({ prefixlen: '24', name: '' });
 
   const { data: networks = [], refetch } = useQuery({
     queryKey: ['networks'],
@@ -70,6 +72,20 @@ export default function Networks() {
     onSuccess: () => {
       toast('success', 'Network deleted');
       setDeleting(null);
+      invalidate();
+    },
+    onError: (err: Error) => toast('error', err.message),
+  });
+
+  const allocate = useMutation({
+    mutationFn: () =>
+      api.post<Network>(`/api/v1/networks/${allocating!.id}/allocate-subnet`, {
+        prefixlen: Number(allocForm.prefixlen),
+        name: allocForm.name,
+      }),
+    onSuccess: (network) => {
+      toast('success', `Allocated ${network.cidr}`);
+      setAllocating(null);
       invalidate();
     },
     onError: (err: Error) => toast('error', err.message),
@@ -147,6 +163,18 @@ export default function Networks() {
             header: 'Actions',
             render: (n) => (
               <span className="flex gap-2">
+                {n.is_container && (
+                  <button
+                    onClick={() => {
+                      setAllocForm({ prefixlen: '24', name: '' });
+                      setAllocating(n);
+                    }}
+                    className="text-accent hover:opacity-70"
+                    title="Allocate next free subnet"
+                  >
+                    <FolderPlus size={14} />
+                  </button>
+                )}
                 <button onClick={() => openEdit(n)} className="text-info hover:opacity-70" title="Edit">
                   <Pencil size={14} />
                 </button>
@@ -221,6 +249,42 @@ export default function Networks() {
           </button>
           <button className="f-btn-primary" disabled={save.isPending || !form.cidr} onClick={() => save.mutate()}>
             {editing ? 'Save' : 'Create'}
+          </button>
+        </div>
+      </SlideOver>
+
+      <SlideOver
+        title={`Allocate next subnet in ${allocating?.cidr ?? ''}`}
+        open={allocating !== null}
+        onClose={() => setAllocating(null)}
+      >
+        <p className="text-table text-muted mb-3">
+          Finds the first free CIDR of the requested size inside the container and creates it
+          (Infoblox-style “next available network”).
+        </p>
+        <FormField label="Prefix length" hint="e.g. 24 for a /24">
+          <input
+            className="f-input"
+            type="number"
+            min={1}
+            max={30}
+            value={allocForm.prefixlen}
+            onChange={(e) => setAllocForm({ ...allocForm, prefixlen: e.target.value })}
+          />
+        </FormField>
+        <FormField label="Name">
+          <input className="f-input" value={allocForm.name} onChange={(e) => setAllocForm({ ...allocForm, name: e.target.value })} />
+        </FormField>
+        <div className="flex justify-end gap-2 mt-4">
+          <button className="f-btn-secondary" onClick={() => setAllocating(null)}>
+            Cancel
+          </button>
+          <button
+            className="f-btn-primary"
+            disabled={allocate.isPending || !allocForm.prefixlen}
+            onClick={() => allocate.mutate()}
+          >
+            Allocate
           </button>
         </div>
       </SlideOver>

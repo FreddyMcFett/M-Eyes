@@ -16,16 +16,17 @@ automatic configuration versioning and self-generating documentation.
 
 | Area | Highlights |
 |---|---|
-| **IPAM** | network containers & subnets, IP inventory, next-free-IP allocation, utilization, VLAN/site metadata, tags, **network discovery** (ping sweep with conflict detection) |
-| **DNS** | forward & reverse zones, A/AAAA/CNAME/MX/TXT/NS/PTR/SRV, automatic PTR management, SOA serial handling, **split-horizon views** (match-clients ACLs), **DNSSEC** inline signing per zone, zone-file preview, one-click deploy to BIND9 (`named-checkzone` validated, `rndc` reload) |
-| **DNS Firewall** | Infoblox-style RPZ: block / NXDOMAIN, NODATA, passthru and substitute rules per domain (subdomains included), generated as a BIND Response Policy Zone |
+| **IPAM** | network containers & subnets, IP inventory, next-free-IP allocation, **next-available-subnet allocation from containers**, utilization, VLAN/site metadata, tags, **network discovery** (ping sweep with conflict detection) |
+| **DNS** | forward & reverse zones, **primary / secondary / forward zone roles** (zone transfer from external primaries, conditional forwarding), A/AAAA/CNAME/MX/TXT/NS/PTR/SRV, automatic PTR management, SOA serial handling, **split-horizon views** (match-clients ACLs), **DNSSEC** inline signing per zone, zone-file preview, one-click deploy to BIND9 (`named-checkzone` validated, `rndc` reload) |
+| **DNS Firewall** | Infoblox-style RPZ: block / NXDOMAIN, NODATA, passthru and substitute rules per domain (subdomains included), plus **threat-intelligence feeds** — subscribe to external domain blocklists (plain or hosts-file format) with automatic re-sync; everything generated as a BIND Response Policy Zone |
 | **DHCP** | scopes mapped to IPAM networks, ranges, MAC reservations (mirrored into IPAM), options, deploy to Kea via Control Agent, **live lease viewer** |
 | **Hosts** | composite create: IP + A + PTR + DHCP reservation in one call — and one delete to reverse it |
 | **Extensible Attributes** | typed, admin-defined metadata (string / integer / email / URL / date / enum) attachable to networks, IPs, zones, records and hosts |
 | **Search** | global search across networks, IPs, zones, records, hosts and firewall rules from the top bar |
 | **Fortinet** | token-protected External Resource feeds (subnets / tagged objects / blocklist / FQDNs), per-feed FortiGate CLI snippets, token rotation, syslog forwarding to FortiAnalyzer or any collector |
+| **Automation** | **API keys / service accounts** (`X-API-Key`) with optional expiry for Terraform, Ansible and scripts — every change attributed in the changelog |
 | **Versioning** | immutable changelog with before/after diffs, global config version, one-click rollback, auto-generated Markdown runbook, deploy-drift display |
-| **Operations** | live dashboard (SSE event stream + polling), event log with live tail, debug mode, engine connectivity tests, diagnostics bundle |
+| **Operations** | live dashboard (SSE event stream + polling), event log with live tail, debug mode, engine connectivity tests, diagnostics bundle, **one-click config backup & restore**, in-UI update check |
 | **HTTPS / TLS** | HTTPS out of the box with an auto-generated self-signed cert; in-UI certificate manager — import a CA, generate a CSR, import the signed cert, activate it and hot-reload the proxy; HTTP→HTTPS redirect, HSTS and minimum-TLS-version controls |
 
 ## Architecture
@@ -55,6 +56,21 @@ CSR, import the signed certificate and activate it — all from the UI, no resta
 Set `MEYES_HOSTNAME` before the first start to control the certificate's CN/SAN.
 
 Demo data is seeded automatically (`MEYES_SEED_DEMO=false` to skip).
+
+## Upgrading
+
+Releases publish versioned images to GHCR, and **data persists across
+upgrades** — the database lives in a named volume and schema migrations run
+automatically on start:
+
+```bash
+docker compose pull && docker compose up -d
+```
+
+Pin a release with `MEYES_VERSION=x.y.z` in `.env`; the UI shows when a new
+release is available (**System → Settings → Backup & Updates**), and the same
+page exports/restores the whole configuration as a single JSON backup.
+Details: [docs/upgrade.md](docs/upgrade.md).
 
 ## Quick start (development)
 

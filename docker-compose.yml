@@ -3,6 +3,7 @@ name: m-eyes
 services:
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: meyes
       POSTGRES_PASSWORD: meyes
@@ -16,9 +17,19 @@ services:
       retries: 10
 
   api:
+    # Published images make upgrades a `docker compose pull && up -d`;
+    # `docker compose build` still works for source installs.
+    image: ghcr.io/freddymcfett/m-eyes-api:${MEYES_VERSION:-latest}
     build:
       context: .
       dockerfile: deploy/api/Dockerfile
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     environment:
       MEYES_DATABASE_URL: postgresql+psycopg://meyes:meyes@postgres:5432/meyes
       MEYES_JWT_SECRET: ${MEYES_JWT_SECRET:-meyes-dev-secret-change-me-in-production!}
@@ -42,9 +53,11 @@ services:
       - "8000:8000"
 
   frontend:
+    image: ghcr.io/freddymcfett/m-eyes-frontend:${MEYES_VERSION:-latest}
     build:
       context: .
       dockerfile: deploy/frontend/Dockerfile
+    restart: unless-stopped
     environment:
       MEYES_TLS_DIR: /shared/tls
       MEYES_BOOTSTRAP_CN: ${MEYES_HOSTNAME:-m-eyes.local}
@@ -58,6 +71,7 @@ services:
 
   bind9:
     image: internetsystemsconsortium/bind9:9.18
+    restart: unless-stopped
     volumes:
       - ./deploy/bind9/named.conf:/etc/bind/named.conf:ro
       - ./deploy/bind9/named.conf.options:/etc/bind/named.conf.options:ro
@@ -71,6 +85,7 @@ services:
 
   kea:
     image: jonasal/kea-dhcp4:2.6
+    restart: unless-stopped
     command: -c /kea-config/kea-dhcp4.conf
     volumes:
       - kea-config:/kea-config
@@ -84,6 +99,7 @@ services:
 
   kea-ctrl-agent:
     image: jonasal/kea-ctrl-agent:2.6
+    restart: unless-stopped
     command: -c /kea/config/kea-ctrl-agent.conf
     volumes:
       - ./deploy/kea/kea-ctrl-agent.conf:/kea/config/kea-ctrl-agent.conf:ro

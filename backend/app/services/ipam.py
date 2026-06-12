@@ -140,6 +140,40 @@ def next_available_ip(db: Session, network: Network) -> str:
     raise HTTPException(status_code=409, detail=f"No free addresses left in {network.cidr}")
 
 
+MAX_SUBNET_CANDIDATES = 65536  # cap the scan when hunting for a free child subnet
+
+
+def next_available_subnet(db: Session, container: Network, prefixlen: int) -> str:
+    """First free child CIDR of the requested size inside a container network
+    (Infoblox/BlueCat-style 'next available network')."""
+    parent = ipaddress.ip_network(container.cidr)
+    if prefixlen <= parent.prefixlen:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Requested prefix /{prefixlen} must be longer than the container's /{parent.prefixlen}",
+        )
+    if parent.version == 4 and prefixlen > 30:
+        raise HTTPException(status_code=422, detail="Requested prefix too small (max /30)")
+    if prefixlen - parent.prefixlen > 16:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Too many /{prefixlen} candidates inside a /{parent.prefixlen}; "
+                   "allocate from a smaller container",
+        )
+    occupied = []
+    for other in db.scalars(select(Network).where(Network.id != container.id)).all():
+        other_net = ipaddress.ip_network(other.cidr)
+        if other_net.version == parent.version and other_net.subnet_of(parent):
+            occupied.append(other_net)
+    for index, candidate in enumerate(parent.subnets(new_prefix=prefixlen)):
+        if index >= MAX_SUBNET_CANDIDATES:
+            break
+        if not any(candidate.overlaps(used) for used in occupied):
+            return str(candidate)
+    raise HTTPException(status_code=409,
+                        detail=f"No free /{prefixlen} subnet left in {container.cidr}")
+
+
 def utilization(db: Session, network: Network) -> dict:
     net = ipaddress.ip_network(network.cidr)
     if net.version == 6:

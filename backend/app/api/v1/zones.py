@@ -63,4 +63,8 @@ def delete_zone(zone_id: int, db: Session = Depends(get_db), user: User = Depend
 @router.get("/{zone_id}/file")
 def zone_file(zone_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     zone = _get_or_404(db, zone_id)
+    if zone.role != "primary":
+        content = (f"; {zone.role} zone - records live on the external servers "
+                   f"({zone.primaries}); no local zone file is generated\n")
+        return {"zone": zone.name, "content": content}
     return {"zone": zone.name, "content": render_zone(db, zone)}

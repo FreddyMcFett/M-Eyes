@@ -2,11 +2,21 @@
 // config version: {{ config_version }}
 {% macro zone_block(z, indent) %}
 {{ indent }}zone "{{ z.name }}" {
+{% if z.role == 'secondary' %}
+{{ indent }}    type slave;
+{{ indent }}    masters { {% for ip in z.primaries %}{{ ip }}; {% endfor %}};
+{{ indent }}    file "{{ zone_dir }}/{{ z.filename }}";
+{% elif z.role == 'forward' %}
+{{ indent }}    type forward;
+{{ indent }}    forward only;
+{{ indent }}    forwarders { {% for ip in z.primaries %}{{ ip }}; {% endfor %}};
+{% else %}
 {{ indent }}    type master;
 {{ indent }}    file "{{ zone_dir }}/{{ z.filename }}";
 {% if z.dnssec %}
 {{ indent }}    dnssec-policy default;
 {{ indent }}    inline-signing yes;
+{% endif %}
 {% endif %}
 {{ indent }}};
 {% endmacro %}

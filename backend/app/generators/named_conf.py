@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.generators import jinja_env
-from app.models import RpzRule, View, Zone
+from app.models import RpzRule, RpzThreatFeed, View, Zone
 from app.services import audit
 
 
@@ -14,11 +14,23 @@ def zone_filename(zone: Zone) -> str:
 
 
 def rpz_active(db: Session) -> bool:
-    return db.scalar(select(RpzRule.id).where(RpzRule.enabled).limit(1)) is not None
+    if db.scalar(select(RpzRule.id).where(RpzRule.enabled).limit(1)) is not None:
+        return True
+    return db.scalar(
+        select(RpzThreatFeed.id)
+        .where(RpzThreatFeed.enabled, RpzThreatFeed.entry_count > 0)
+        .limit(1)
+    ) is not None
 
 
 def _zone_entry(zone: Zone) -> dict:
-    return {"name": zone.name, "filename": zone_filename(zone), "dnssec": zone.dnssec_enabled}
+    return {
+        "name": zone.name,
+        "filename": zone_filename(zone),
+        "dnssec": zone.dnssec_enabled,
+        "role": zone.role,
+        "primaries": [ip for ip in zone.primaries.split(",") if ip],
+    }
 
 
 def _match_clients_clause(match_clients: str) -> str:
@@ -48,7 +60,7 @@ def render_zones_conf(db: Session) -> str:
     rpz = None
     if rpz_active(db):
         rpz = {"name": settings.rpz_zone_name, "filename": f"db.{settings.rpz_zone_name}",
-               "dnssec": False}
+               "dnssec": False, "role": "primary", "primaries": []}
 
     template = jinja_env.get_template("zones.conf.j2")
     return template.render(
