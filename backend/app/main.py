@@ -10,6 +10,7 @@ from app.api.v1 import (
     addresses,
     auth,
     blocklist,
+    certs,
     changelog,
     dashboard,
     deploy,
@@ -32,6 +33,7 @@ from app.database import SessionLocal, engine
 from app.feeds.router import router as feeds_router
 from app.models import Base, User
 from app.security import hash_password
+from app.services import certs as certs_service
 from app.services.broker import broker
 from app.version import __version__
 
@@ -50,6 +52,8 @@ def seed_admin() -> None:
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(engine)
     seed_admin()
+    with SessionLocal() as db:
+        certs_service.ensure_bootstrap(db)
     broker.set_loop(asyncio.get_running_loop())
     yield
 
@@ -73,7 +77,7 @@ def create_app() -> FastAPI:
         zones.router, views.router, records.router, dhcp.router, hosts.router,
         feeds_admin.router, blocklist.router, changelog.router, deploy.router,
         runbook.router, logs.router, system.router, rpz.router, extattrs.router,
-        search.router,
+        search.router, certs.router,
     )
     for router in api_routers:
         app.include_router(router, prefix="/api/v1")

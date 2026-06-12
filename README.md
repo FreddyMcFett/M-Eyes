@@ -22,6 +22,7 @@ automatic configuration versioning and self-generating documentation.
 | **Fortinet** | token-protected External Resource feeds (subnets / tagged objects / blocklist / FQDNs), per-feed FortiGate CLI snippets, token rotation, syslog forwarding to FortiAnalyzer or any collector |
 | **Versioning** | immutable changelog with before/after diffs, global config version, one-click rollback, auto-generated Markdown runbook, deploy-drift display |
 | **Operations** | live dashboard (SSE event stream + polling), event log with live tail, debug mode, engine connectivity tests, diagnostics bundle |
+| **HTTPS / TLS** | HTTPS out of the box with an auto-generated self-signed cert; in-UI certificate manager — import a CA, generate a CSR, import the signed cert, activate it and hot-reload the proxy; HTTP→HTTPS redirect, HSTS and minimum-TLS-version controls |
 
 ## Quick start (Docker)
 
@@ -29,9 +30,16 @@ automatic configuration versioning and self-generating documentation.
 docker compose up -d --build
 ```
 
-- Web UI: **http://localhost:8080** — login `admin` / `admin`
+- Web UI: **https://localhost:8443** — login `admin` / `admin`
+  (HTTP on http://localhost:8080 redirects to HTTPS)
 - API & Swagger: http://localhost:8000/docs
 - DNS (BIND9): `dig @localhost -p 5353 ns1.corp.m-eyes.local` (after deploying from the UI)
+
+HTTPS works out of the box: on first start M-Eyes generates a self-signed
+certificate (your browser will warn until you import a CA-signed one). Manage
+certificates from **System → Settings → HTTPS / TLS**: import a CA, generate a
+CSR, import the signed certificate and activate it — all from the UI, no restart.
+Set `MEYES_HOSTNAME` before the first start to control the certificate's CN/SAN.
 
 Demo data is seeded automatically (`MEYES_SEED_DEMO=false` to skip).
 
@@ -91,7 +99,11 @@ docs/       MkDocs documentation (auto-deployed, auto-generated API reference)
 
 ## Production checklist
 
-- Terminate TLS in front of M-Eyes (feeds use HTTP basic auth).
+- Replace the auto-generated self-signed certificate: in **System → Settings →
+  HTTPS / TLS** generate a CSR, have it signed by your CA, import it and activate
+  it (or import an existing cert + key). Enable HSTS once HTTPS is confirmed.
+- Set `MEYES_HOSTNAME` to the FQDN clients use so the bootstrap certificate and
+  CSR defaults match.
 - Set `MEYES_JWT_SECRET`; change the admin password.
 - Regenerate `deploy/bind9/rndc.key` (`rndc-confgen -a`) — the committed key is dev-only.
 - Give the Kea container L2 access (`network_mode: host`) for real DHCP service.

@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     # DNS firewall (Response Policy Zone)
     rpz_zone_name: str = "rpz.m-eyes"
 
+    # TLS / HTTPS — where the active server certificate, key, trust bundle and
+    # the nginx options snippet are materialized for the TLS-terminating proxy.
+    tls_dir: str = "./out/tls"
+    # Default identity for the auto-generated self-signed bootstrap certificate.
+    tls_default_hostname: str = "m-eyes.local"
+
 
 @lru_cache
 def get_settings() -> Settings:

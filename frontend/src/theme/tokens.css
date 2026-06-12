@@ -63,3 +63,6 @@ body {
 .f-label {
   @apply block text-table font-medium text-slate-600 mb-1;
 }
+.f-icon-btn {
+  @apply inline-flex items-center justify-center p-1 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
+}

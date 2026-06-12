@@ -237,3 +237,31 @@ export interface DiscoveryResult {
   updated: number;
   conflicts: number;
 }
+
+export interface Certificate {
+  id: number;
+  name: string;
+  kind: 'server' | 'ca';
+  status: string;
+  subject: string;
+  issuer: string;
+  san: string[] | null;
+  serial: string;
+  fingerprint_sha256: string;
+  key_type: string;
+  is_self_signed: boolean;
+  not_before: string | null;
+  not_after: string | null;
+  has_key: boolean;
+  has_csr: boolean;
+  has_chain: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TlsStatus {
+  https_ready: boolean;
+  active_certificate: Certificate | null;
+  tls_dir: string;
+  settings: Record<string, string>;
+}

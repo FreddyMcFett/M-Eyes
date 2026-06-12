@@ -1,5 +1,6 @@
 from app.models.audit import ChangeLog, Deployment
 from app.models.base import Base
+from app.models.cert import Certificate
 from app.models.dhcp import DhcpOption, DhcpRange, DhcpReservation, DhcpSubnet
 from app.models.dns import Record, View, Zone
 from app.models.events import AppSetting, Event
@@ -14,6 +15,7 @@ __all__ = [
     "AppSetting",
     "Base",
     "BlocklistEntry",
+    "Certificate",
     "ChangeLog",
     "Deployment",
     "DhcpOption",

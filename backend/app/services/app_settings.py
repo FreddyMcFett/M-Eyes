@@ -13,6 +13,14 @@ DEFAULTS: dict[str, str] = {
     "syslog_min_severity": "info",  # debug|info|warning|error
     "debug_mode": "false",
     "log_level": "info",
+    # System identity
+    "system_hostname": "",          # FQDN clients use to reach M-Eyes (default CSR/cert CN)
+    "organization_name": "M-Eyes",  # used as default O in generated CSRs
+    # HTTPS / TLS (applied by the TLS-terminating proxy on save)
+    "https_redirect": "true",       # 301 redirect plain HTTP to HTTPS
+    "hsts_enabled": "false",        # emit Strict-Transport-Security header
+    "hsts_max_age": "31536000",
+    "tls_min_version": "TLSv1.2",   # TLSv1.2|TLSv1.3
 }
 
 
