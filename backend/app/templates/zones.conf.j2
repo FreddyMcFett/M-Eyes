@@ -1,0 +1,8 @@
+// M-Eyes generated BIND zone declarations - do not edit by hand
+// config version: {{ config_version }}
+{% for zone in zones %}
+zone "{{ zone.name }}" {
+    type master;
+    file "{{ zone_dir }}/db.{{ zone.name }}";
+};
+{% endfor %}

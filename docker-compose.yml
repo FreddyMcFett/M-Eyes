@@ -1,0 +1,89 @@
+name: m-eyes
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: meyes
+      POSTGRES_PASSWORD: meyes
+      POSTGRES_DB: meyes
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meyes"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: deploy/api/Dockerfile
+    environment:
+      MEYES_DATABASE_URL: postgresql+psycopg://meyes:meyes@postgres:5432/meyes
+      MEYES_JWT_SECRET: ${MEYES_JWT_SECRET:-meyes-dev-secret-change-me-in-production!}
+      MEYES_BIND_OUTPUT_DIR: /shared/bind
+      MEYES_KEA_OUTPUT_DIR: /shared/kea
+      MEYES_RNDC_HOST: bind9
+      MEYES_RNDC_KEY_FILE: /etc/bind/rndc.key
+      MEYES_KEA_CA_URL: http://kea-ctrl-agent:8000
+      MEYES_SEED_DEMO: ${MEYES_SEED_DEMO:-true}
+    volumes:
+      - bind-config:/shared/bind
+      - kea-config:/shared/kea
+      - ./deploy/bind9/rndc.key:/etc/bind/rndc.key:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: deploy/frontend/Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+  bind9:
+    image: internetsystemsconsortium/bind9:9.18
+    volumes:
+      - ./deploy/bind9/named.conf:/etc/bind/named.conf:ro
+      - ./deploy/bind9/named.conf.options:/etc/bind/named.conf.options:ro
+      - ./deploy/bind9/rndc.key:/etc/bind/rndc.key:ro
+      - bind-config:/etc/bind/m-eyes
+    depends_on:
+      - api  # the api entrypoint creates an empty zones.conf on first boot
+    ports:
+      - "5353:53/udp"
+      - "5353:53/tcp"
+
+  kea:
+    image: jonasal/kea-dhcp4:2.6
+    command: -c /kea-config/kea-dhcp4.conf
+    volumes:
+      - kea-config:/kea-config
+      - kea-sockets:/run/kea
+    depends_on:
+      - api  # the api entrypoint installs the bootstrap config on first boot
+    # Real DHCP service needs L2 access; uncomment for production use:
+    # network_mode: host
+    ports:
+      - "6767:67/udp"
+
+  kea-ctrl-agent:
+    image: jonasal/kea-ctrl-agent:2.6
+    command: -c /kea/config/kea-ctrl-agent.conf
+    volumes:
+      - ./deploy/kea/kea-ctrl-agent.conf:/kea/config/kea-ctrl-agent.conf:ro
+      - kea-sockets:/run/kea
+    depends_on:
+      - kea
+
+volumes:
+  pgdata:
+  bind-config:
+  kea-config:
+  kea-sockets:

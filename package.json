@@ -1,0 +1,16 @@
+{
+  "name": "m-eyes",
+  "version": "0.1.0",
+  "private": true,
+  "description": "M-Eyes - open-source DDI platform (DNS, DHCP, IPAM) with Fortinet ecosystem integration",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FreddyMcFett/M-Eyes.git"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "semantic-release": "^24.0.0"
+  }
+}

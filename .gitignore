@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Databases / generated engine config
+*.db
+backend/out/
+out/
+
+# Node
+node_modules/
+frontend/dist/
+
+# Docs build
+site/
+
+# Env / IDE
+.env
+.idea/
+.vscode/
+.DS_Store
