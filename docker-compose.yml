@@ -36,7 +36,7 @@ services:
       MEYES_BIND_OUTPUT_DIR: /shared/bind
       MEYES_KEA_OUTPUT_DIR: /shared/kea
       MEYES_RNDC_HOST: bind9
-      MEYES_RNDC_KEY_FILE: /etc/bind/rndc.key
+      MEYES_RNDC_KEY_FILE: /shared/bind/rndc.key
       MEYES_KEA_CA_URL: http://kea-ctrl-agent:8000
       MEYES_TLS_DIR: /shared/tls
       MEYES_TLS_DEFAULT_HOSTNAME: ${MEYES_HOSTNAME:-m-eyes.local}
@@ -45,7 +45,6 @@ services:
       - bind-config:/shared/bind
       - kea-config:/shared/kea
       - tls-config:/shared/tls
-      - ./deploy/bind9/rndc.key:/etc/bind/rndc.key:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,10 +74,11 @@ services:
     volumes:
       - ./deploy/bind9/named.conf:/etc/bind/named.conf:ro
       - ./deploy/bind9/named.conf.options:/etc/bind/named.conf.options:ro
-      - ./deploy/bind9/rndc.key:/etc/bind/rndc.key:ro
       - bind-config:/etc/bind/m-eyes
     depends_on:
-      - api  # the api entrypoint creates an empty zones.conf on first boot
+      # the api entrypoint creates zones.conf and the rndc key on first boot
+      api:
+        condition: service_healthy
     ports:
       - "5353:53/udp"
       - "5353:53/tcp"
@@ -91,7 +91,9 @@ services:
       - kea-config:/kea-config
       - kea-sockets:/run/kea
     depends_on:
-      - api  # the api entrypoint installs the bootstrap config on first boot
+      # the api entrypoint installs the bootstrap config on first boot
+      api:
+        condition: service_healthy
     # Real DHCP service needs L2 access; uncomment for production use:
     # network_mode: host
     ports:

@@ -11,6 +11,17 @@ from app.models.dns import RECORD_TYPES, ZONE_ROLES
 from app.services import audit, events, extattrs
 
 _NAME_RE = re.compile(r"^(@|\*|[A-Za-z0-9_]([A-Za-z0-9_\-\.\*]*[A-Za-z0-9_])?)$")
+# Control characters (incl. newlines) must never reach the generated zone file:
+# a newline in a record value or zone name would let an authenticated user inject
+# arbitrary BIND directives or extra resource records.
+_CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
+# Host name used as a zone name or as the value of a name-typed record. Allows an
+# optional leading wildcard label and an optional trailing dot (absolute name).
+_HOSTNAME_RE = re.compile(
+    r"^(\*\.)?([A-Za-z0-9_](?:[A-Za-z0-9_\-]*[A-Za-z0-9_])?\.)*"
+    r"[A-Za-z0-9_](?:[A-Za-z0-9_\-]*[A-Za-z0-9_])?\.?$"
+)
+_NAME_VALUE_TYPES = ("CNAME", "NS", "PTR", "MX", "SRV")
 
 
 def bump_serial(db: Session, zone: Zone) -> None:
@@ -122,6 +133,10 @@ def create_zone(db: Session, actor: str, data: dict) -> Zone:
     name = (data.get("name") or "").rstrip(".").lower()
     if not name:
         raise HTTPException(status_code=422, detail="Zone name is required")
+    if len(name) > 253 or not _HOSTNAME_RE.match(name):
+        # the zone name becomes part of the on-disk zone file name, so reject
+        # anything that is not a plain DNS name (no slashes, no path traversal)
+        raise HTTPException(status_code=422, detail=f"Invalid zone name {name!r}")
     data["name"] = name
     _check_view_and_duplicate(db, name, data.get("view_id"))
     _validate_role(data)
@@ -179,6 +194,14 @@ def _validate_record(data: dict) -> None:
     if not _NAME_RE.match(data["name"]):
         raise HTTPException(status_code=422, detail=f"Invalid record name {data['name']!r}")
     rtype, value = data["type"], data["value"]
+    if not isinstance(value, str) or _CONTROL_RE.search(value):
+        raise HTTPException(status_code=422,
+                            detail="Record value contains forbidden control characters")
+    if len(value) > 1024:
+        raise HTTPException(status_code=422, detail="Record value is too long (max 1024 chars)")
+    if rtype in _NAME_VALUE_TYPES and not _HOSTNAME_RE.match(value):
+        raise HTTPException(status_code=422,
+                            detail=f"{rtype} record value must be a valid host name, got {value!r}")
     if rtype == "A":
         try:
             if ipaddress.ip_address(value).version != 4:

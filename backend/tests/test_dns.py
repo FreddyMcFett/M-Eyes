@@ -89,3 +89,32 @@ def test_zone_file_rendering(client, auth_headers):
     assert "alias" in content and "www.render.test." in content
     current_serial = client.get(f"/api/v1/zones/{zone['id']}", headers=auth_headers).json()["serial"]
     assert str(current_serial) in content
+
+
+def test_record_value_rejects_zone_file_injection(client, auth_headers):
+    zone = make_zone(client, auth_headers, "inject.test")
+    # a newline in a record value would let an authenticated user inject extra
+    # resource records / directives into the generated BIND zone file
+    bad = client.post(
+        f"/api/v1/zones/{zone['id']}/records",
+        json={"name": "evil", "type": "TXT", "value": "ok\n@ IN NS attacker.example."},
+        headers=auth_headers,
+    )
+    assert bad.status_code == 422
+    # name-typed values must be valid host names (no spaces / extra tokens)
+    bad_cname = client.post(
+        f"/api/v1/zones/{zone['id']}/records",
+        json={"name": "alias", "type": "CNAME", "value": "good.example. 60 IN A 6.6.6.6"},
+        headers=auth_headers,
+    )
+    assert bad_cname.status_code == 422
+
+
+def test_zone_name_rejects_path_traversal(client, auth_headers):
+    # the zone name becomes part of the on-disk file name; reject path separators
+    response = client.post(
+        "/api/v1/zones",
+        json={"name": "../../etc/cron.d/evil", "kind": "forward"},
+        headers=auth_headers,
+    )
+    assert response.status_code == 422

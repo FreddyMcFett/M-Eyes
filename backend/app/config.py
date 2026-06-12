@@ -10,12 +10,17 @@ class Settings(BaseSettings):
     jwt_secret: str = "meyes-dev-secret-change-me-in-production!"
     jwt_expire_minutes: int = 480
 
+    # Comma-separated list of allowed CORS origins, or "*" for any. The web UI is
+    # served same-origin behind the bundled nginx proxy, so production deployments
+    # should pin this to their own host(s) instead of the wildcard default.
+    cors_allow_origins: str = "*"
+
     # Engine deployment
     bind_output_dir: str = "./out/bind"
     kea_output_dir: str = "./out/kea"
     rndc_host: str = "127.0.0.1"
     rndc_port: int = 953
-    rndc_key_file: str = "./deploy/bind9/rndc.key"
+    rndc_key_file: str = "./out/bind/rndc.key"  # generated on first boot, not committed
     kea_ca_url: str = "http://127.0.0.1:8001"
     bind_zone_dir: str = "/etc/bind/m-eyes"  # path as seen by the BIND container
 
@@ -34,6 +39,14 @@ class Settings(BaseSettings):
     tls_default_hostname: str = "m-eyes.local"
 
 
+    @property
+    def cors_origins_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_allow_origins.split(",") if o.strip()] or ["*"]
+
+
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+DEFAULT_JWT_SECRET = Settings.model_fields["jwt_secret"].default
