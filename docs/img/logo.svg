@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="M-Eyes logo">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#243447"/>
+      <stop offset="1" stop-color="#16202e"/>
+    </linearGradient>
+    <radialGradient id="iris" cx="0.38" cy="0.32" r="0.9">
+      <stop offset="0" stop-color="#6fcf74"/>
+      <stop offset="0.55" stop-color="#4caf50"/>
+      <stop offset="1" stop-color="#357a38"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="100" fill="url(#bg)"/>
+
+  <!-- network traces wiring the eye into the fabric -->
+  <g stroke="#4caf50" stroke-width="12" stroke-linecap="round">
+    <line x1="88" y1="256" x2="54" y2="222"/>
+    <line x1="424" y1="256" x2="458" y2="290"/>
+  </g>
+  <circle cx="54" cy="222" r="13" fill="#4caf50"/>
+  <circle cx="458" cy="290" r="13" fill="#4caf50"/>
+
+  <!-- eye -->
+  <path d="M 88 256 C 150 150 362 150 424 256 C 362 362 150 362 88 256 Z"
+        fill="none" stroke="#e9eef4" stroke-width="20" stroke-linejoin="round"/>
+  <circle cx="88" cy="256" r="13" fill="#4caf50"/>
+  <circle cx="424" cy="256" r="13" fill="#4caf50"/>
+
+  <!-- iris / pupil -->
+  <circle cx="256" cy="256" r="76" fill="url(#iris)"/>
+  <circle cx="256" cy="256" r="32" fill="#16202e"/>
+  <circle cx="234" cy="232" r="12" fill="#ffffff" opacity="0.85"/>
+</svg>

@@ -5,7 +5,6 @@ import {
   Activity,
   ChevronDown,
   ChevronRight,
-  Eye,
   FileText,
   Globe,
   History,
@@ -116,7 +115,7 @@ export default function AppShell() {
       {/* Sidebar */}
       <aside className="w-[230px] bg-sidebar flex flex-col shrink-0">
         <div className="flex items-center gap-2 px-4 py-3.5 bg-topbar">
-          <Eye size={22} className="text-accent" />
+          <img src="/logo.svg" alt="M-Eyes" className="w-7 h-7 rounded" />
           <div>
             <div className="text-white font-bold leading-tight tracking-wide">M-EYES</div>
             <div className="text-[10px] text-slate-400 uppercase">DDI Platform</div>

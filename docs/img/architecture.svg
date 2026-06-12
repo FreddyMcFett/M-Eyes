@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1160 760" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" role="img" aria-label="M-Eyes solution architecture">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4caf50"/>
+    </marker>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#283a50"/>
+      <stop offset="1" stop-color="#223042"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1160" height="760" rx="18" fill="#16202e"/>
+
+  <!-- title with mini logo -->
+  <g transform="translate(36,22) scale(0.082)">
+    <rect width="512" height="512" rx="100" fill="#243447"/>
+    <path d="M 88 256 C 150 150 362 150 424 256 C 362 362 150 362 88 256 Z" fill="none" stroke="#e9eef4" stroke-width="22"/>
+    <circle cx="256" cy="256" r="76" fill="#4caf50"/>
+    <circle cx="256" cy="256" r="32" fill="#16202e"/>
+  </g>
+  <text x="92" y="44" fill="#f1f5f9" font-size="22" font-weight="700">M-Eyes &#183; Solution Architecture</text>
+  <text x="92" y="63" fill="#9fb0c3" font-size="13">DNS &#183; DHCP &#183; IPAM control plane for the Fortinet ecosystem</text>
+
+  <!-- Browser -->
+  <rect x="80" y="100" width="380" height="78" rx="10" fill="url(#panel)" stroke="#3b5068" stroke-width="1.5"/>
+  <text x="270" y="132" text-anchor="middle" fill="#f1f5f9" font-size="17" font-weight="700">Browser</text>
+  <text x="270" y="156" text-anchor="middle" fill="#9fb0c3" font-size="13">React 18 + TypeScript SPA &#183; FortiOS-style UI</text>
+
+  <!-- FortiGate -->
+  <rect x="760" y="100" width="320" height="78" rx="10" fill="url(#panel)" stroke="#3b5068" stroke-width="1.5"/>
+  <text x="920" y="132" text-anchor="middle" fill="#f1f5f9" font-size="17" font-weight="700">FortiGate(s)</text>
+  <text x="920" y="156" text-anchor="middle" fill="#9fb0c3" font-size="13">External Resources &#183; firewall policies</text>
+
+  <!-- nginx -->
+  <rect x="80" y="240" width="380" height="78" rx="10" fill="url(#panel)" stroke="#3b5068" stroke-width="1.5"/>
+  <text x="270" y="272" text-anchor="middle" fill="#f1f5f9" font-size="17" font-weight="700">nginx reverse proxy</text>
+  <text x="270" y="296" text-anchor="middle" fill="#9fb0c3" font-size="13">HTTPS :8443 &#183; TLS / HSTS &#183; HTTP&#8594;HTTPS redirect</text>
+
+  <!-- FortiAnalyzer -->
+  <rect x="760" y="240" width="320" height="64" rx="10" fill="url(#panel)" stroke="#3b5068" stroke-width="1.5"/>
+  <text x="920" y="266" text-anchor="middle" fill="#f1f5f9" font-size="16" font-weight="700">FortiAnalyzer / syslog collector</text>
+  <text x="920" y="288" text-anchor="middle" fill="#9fb0c3" font-size="13">event forwarding</text>
+
+  <!-- API -->
+  <rect x="80" y="380" width="540" height="110" rx="10" fill="url(#panel)" stroke="#4caf50" stroke-width="2"/>
+  <text x="350" y="414" text-anchor="middle" fill="#f1f5f9" font-size="18" font-weight="700">M-Eyes Control Plane &#8212; FastAPI</text>
+  <text x="350" y="440" text-anchor="middle" fill="#9fb0c3" font-size="13">routers &#8594; services &#8594; SQLAlchemy models</text>
+  <text x="350" y="462" text-anchor="middle" fill="#9fb0c3" font-size="13">audit &amp; changelog &#183; config versioning &#183; rollback &#183; SSE events</text>
+
+  <!-- Database -->
+  <g>
+    <path d="M 80 590 a 130 16 0 0 1 260 0 v 60 a 130 16 0 0 1 -260 0 z" fill="url(#panel)" stroke="#3b5068" stroke-width="1.5"/>
+    <ellipse cx="210" cy="590" rx="130" ry="16" fill="#2c3f56" stroke="#3b5068" stroke-width="1.5"/>
+    <text x="210" y="630" text-anchor="middle" fill="#f1f5f9" font-size="16" font-weight="700">Database</text>
+    <text x="210" y="652" text-anchor="middle" fill="#9fb0c3" font-size="13">SQLite (dev) / PostgreSQL</text>
+  </g>
+
+  <!-- BIND9 -->
+  <rect x="390" y="580" width="290" height="90" rx="10" fill="url(#panel)" stroke="#3b5068" stroke-width="1.5"/>
+  <text x="535" y="612" text-anchor="middle" fill="#f1f5f9" font-size="16" font-weight="700">BIND9 (DNS engine)</text>
+  <text x="535" y="635" text-anchor="middle" fill="#9fb0c3" font-size="13">zone files + zones.conf + RPZ</text>
+  <text x="535" y="655" text-anchor="middle" fill="#9fb0c3" font-size="13">named-checkzone &#183; rndc reload</text>
+
+  <!-- Kea -->
+  <rect x="740" y="580" width="340" height="90" rx="10" fill="url(#panel)" stroke="#3b5068" stroke-width="1.5"/>
+  <text x="910" y="612" text-anchor="middle" fill="#f1f5f9" font-size="16" font-weight="700">Kea DHCP4 + Control Agent</text>
+  <text x="910" y="635" text-anchor="middle" fill="#9fb0c3" font-size="13">kea-dhcp4.conf (subnets, pools, reservations)</text>
+  <text x="910" y="655" text-anchor="middle" fill="#9fb0c3" font-size="13">config-reload via REST API</text>
+
+  <!-- arrows -->
+  <g stroke="#4caf50" stroke-width="2.5" fill="none">
+    <line x1="270" y1="178" x2="270" y2="234" marker-end="url(#arrow)"/>
+    <line x1="270" y1="318" x2="270" y2="374" marker-end="url(#arrow)"/>
+    <line x1="190" y1="490" x2="200" y2="568" marker-end="url(#arrow)"/>
+    <line x1="430" y1="490" x2="498" y2="574" marker-end="url(#arrow)"/>
+    <polyline points="620,450 910,450 910,574" marker-end="url(#arrow)"/>
+    <polyline points="860,178 860,206 420,206 420,234" marker-end="url(#arrow)"/>
+    <polyline points="620,410 700,410 700,272 754,272" marker-end="url(#arrow)"/>
+  </g>
+
+  <!-- arrow labels -->
+  <g fill="#6fcf74" font-size="12.5">
+    <text x="282" y="212">HTTPS</text>
+    <text x="282" y="352">/api &#183; /feeds</text>
+    <text x="120" y="535">SQLAlchemy ORM</text>
+    <text x="438" y="540">zone files &#183; rndc reload</text>
+    <text x="660" y="442">kea-dhcp4.conf &#183; config-reload</text>
+    <text x="575" y="200">pulls /feeds/*.txt as External Resource</text>
+    <text x="640" y="402">syslog</text>
+  </g>
+</svg>

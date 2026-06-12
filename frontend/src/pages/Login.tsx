@@ -1,6 +1,5 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye } from 'lucide-react';
 import { api, setToken } from '../api/client';
 
 export default function Login() {
@@ -32,7 +31,7 @@ export default function Login() {
     <div className="min-h-screen bg-sidebar flex items-center justify-center">
       <form onSubmit={submit} className="bg-topbar rounded shadow-2xl w-[360px] p-8">
         <div className="flex items-center justify-center gap-2 mb-6">
-          <Eye size={32} className="text-accent" />
+          <img src="/logo.svg" alt="M-Eyes" className="w-10 h-10 rounded" />
           <div>
             <div className="text-white font-bold text-xl tracking-wide">M-EYES</div>
             <div className="text-[10px] text-slate-400 uppercase tracking-widest">DDI Platform</div>

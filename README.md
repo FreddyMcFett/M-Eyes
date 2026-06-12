@@ -1,4 +1,8 @@
-# M-Eyes
+<p align="center">
+  <img src="docs/img/logo.svg" alt="M-Eyes logo" width="128" />
+</p>
+
+<h1 align="center">M-Eyes</h1>
 
 **M-Eyes** is an open-source **DDI platform** — DNS, DHCP and IP Address Management in a
 single control plane — built for the **Fortinet ecosystem**, with a FortiOS-style web UI,
@@ -23,6 +27,15 @@ automatic configuration versioning and self-generating documentation.
 | **Versioning** | immutable changelog with before/after diffs, global config version, one-click rollback, auto-generated Markdown runbook, deploy-drift display |
 | **Operations** | live dashboard (SSE event stream + polling), event log with live tail, debug mode, engine connectivity tests, diagnostics bundle |
 | **HTTPS / TLS** | HTTPS out of the box with an auto-generated self-signed cert; in-UI certificate manager — import a CA, generate a CSR, import the signed cert, activate it and hot-reload the proxy; HTTP→HTTPS redirect, HSTS and minimum-TLS-version controls |
+
+## Architecture
+
+![M-Eyes solution architecture](docs/img/architecture.svg)
+
+The control plane never speaks DNS or DHCP itself: it renders engine-native
+configuration (validated zone files for BIND9, `kea-dhcp4.conf` for Kea) and triggers
+reloads over the engines' native control channels. Full details:
+[docs/architecture.md](docs/architecture.md).
 
 ## Quick start (Docker)
 
