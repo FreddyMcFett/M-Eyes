@@ -1,0 +1,12 @@
+; M-Eyes generated zone file - do not edit by hand
+; zone: {{ zone.name }}  config version: {{ config_version }}
+$TTL {{ zone.default_ttl }}
+@   IN  SOA {{ zone.soa_mname }} {{ zone.soa_rname }} (
+        {{ zone.serial }} ; serial
+        {{ zone.refresh }} ; refresh
+        {{ zone.retry }} ; retry
+        {{ zone.expire }} ; expire
+        {{ zone.minimum }} ) ; minimum
+{% for record in records %}
+{{ "%-30s"|format(record.name) }} {{ record.ttl if record.ttl else "" }} IN {{ "%-6s"|format(record.type) }} {% if record.priority is not none %}{{ record.priority }} {% endif %}{{ record.rendered_value }}
+{% endfor %}

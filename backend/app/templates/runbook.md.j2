@@ -1,0 +1,48 @@
+# M-Eyes Configuration Runbook
+
+> Auto-generated configuration document — **config version {{ config_version }}**, generated {{ generated_at }} UTC.
+> This document always reflects the live configuration; regenerate it after changes.
+
+## Summary
+
+| Metric | Count |
+|---|---|
+| Networks | {{ networks|length }} |
+| Allocated IPs | {{ ip_count }} |
+| DNS zones | {{ zones|length }} |
+| DNS records | {{ record_count }} |
+| DHCP scopes | {{ dhcp_subnets|length }} |
+| Hosts | {{ host_count }} |
+| Fortinet feeds | {{ feeds|length }} |
+
+## IPAM Networks
+
+| CIDR | Name | Type | VLAN | Site | Utilization |
+|---|---|---|---|---|---|
+{% for n in networks %}
+| `{{ n.cidr }}` | {{ n.name or "—" }} | {{ "Container" if n.is_container else "Subnet" }} | {{ n.vlan or "—" }} | {{ n.site or "—" }} | {{ n.utilization }}% |
+{% endfor %}
+
+## DNS Zones
+
+| Zone | Kind | Serial | Records |
+|---|---|---|---|
+{% for z in zones %}
+| `{{ z.name }}` | {{ z.kind }} | {{ z.serial }} | {{ z.record_count }} |
+{% endfor %}
+
+## DHCP Scopes
+
+| Network | Enabled | Ranges | Reservations |
+|---|---|---|---|
+{% for s in dhcp_subnets %}
+| `{{ s.cidr }}` | {{ "yes" if s.enabled else "no" }} | {{ s.ranges|join(", ") or "—" }} | {{ s.reservation_count }} |
+{% endfor %}
+
+## Fortinet Feeds
+
+| Feed | Kind | Enabled | URL path |
+|---|---|---|---|
+{% for f in feeds %}
+| {{ f.name }} | {{ f.kind }} | {{ "yes" if f.enabled else "no" }} | `/feeds/{{ f.slug }}.txt` |
+{% endfor %}

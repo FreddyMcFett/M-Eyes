@@ -1,0 +1,22 @@
+site_name: M-Eyes
+site_description: Open-source DDI platform (DNS, DHCP, IPAM) with Fortinet ecosystem integration
+repo_url: https://github.com/FreddyMcFett/M-Eyes
+theme:
+  name: material
+  palette:
+    primary: teal
+    accent: green
+  features:
+    - navigation.sections
+    - content.code.copy
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Architecture: architecture.md
+  - Fortinet Integration: fortinet-integration.md
+  - Versioning & Auditing: versioning.md
+  - API Reference: api/reference.md
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences
+  - tables

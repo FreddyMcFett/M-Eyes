@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* FortiOS 7.x inspired palette */
+:root {
+  --sidebar-bg: #1e2b3c;
+  --sidebar-hover: #27374d;
+  --sidebar-active: #2e4159;
+  --topbar-bg: #16202e;
+  --accent: #4caf50;
+  --accent-dark: #3d8b40;
+  --content-bg: #f1f3f5;
+  --card-bg: #ffffff;
+  --table-header-bg: #e9ecef;
+  --border: #d8dde3;
+  --text-muted: #6b7785;
+  --danger: #d9534f;
+  --warning: #f0ad4e;
+  --info: #3a87ad;
+}
+
+body {
+  @apply bg-content text-slate-800 antialiased;
+  font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+}
+
+/* dense FortiOS-style tables */
+.f-table {
+  @apply w-full text-table border-collapse;
+}
+.f-table th {
+  @apply bg-table-header text-left font-semibold text-slate-600 px-3 py-2 border-b border-line whitespace-nowrap select-none;
+}
+.f-table td {
+  @apply px-3 py-1.5 border-b border-line align-middle;
+}
+.f-table tbody tr:hover {
+  @apply bg-slate-50;
+}
+
+.f-card {
+  @apply bg-card border border-line rounded shadow-sm;
+}
+
+.f-btn {
+  @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-table font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+.f-btn-primary {
+  @apply f-btn bg-accent text-white hover:bg-accent-dark;
+}
+.f-btn-secondary {
+  @apply f-btn bg-white border border-line text-slate-700 hover:bg-slate-50;
+}
+.f-btn-danger {
+  @apply f-btn bg-danger text-white hover:opacity-90;
+}
+
+.f-input {
+  @apply w-full border border-line rounded px-2.5 py-1.5 text-table bg-white focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent;
+}
+.f-label {
+  @apply block text-table font-medium text-slate-600 mb-1;
+}
