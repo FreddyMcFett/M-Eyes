@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+# [1.2.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.1.0...v1.2.0) (2026-06-12)
+
+
+### Features
+
+* GUI system settings + HTTPS with in-UI certificate management ([68215ec](https://github.com/FreddyMcFett/M-Eyes/commit/68215ec1f90a9f341b25574eae8bf5715fc34014))
+
 # [1.1.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.0.0...v1.1.0) (2026-06-12)
 
 
