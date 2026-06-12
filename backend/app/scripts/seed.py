@@ -13,10 +13,9 @@ from app.models import Base, BlocklistEntry, Feed, Network, Tag, User
 from app.security import hash_password
 from app.services import dhcp as dhcp_service
 from app.services import dns as dns_service
-from app.services import events
+from app.services import events, ipam
 from app.services import extattrs as extattr_service
 from app.services import host as host_service
-from app.services import ipam
 from app.services import rpz as rpz_service
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")

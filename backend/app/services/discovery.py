@@ -46,7 +46,7 @@ def discover(db: Session, actor: str, network: Network) -> dict:
 
     hosts = [str(host) for host in net.hosts()]
     with ThreadPoolExecutor(max_workers=PING_WORKERS) as pool:
-        alive = {ip for ip, ok in zip(hosts, pool.map(_ping, hosts)) if ok}
+        alive = {ip for ip, ok in zip(hosts, pool.map(_ping, hosts), strict=True) if ok}
 
     existing = {
         row.ip: row

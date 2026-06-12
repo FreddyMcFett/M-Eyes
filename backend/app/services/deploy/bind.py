@@ -75,7 +75,7 @@ def deploy(db: Session, actor: str, debug: bool = False) -> dict:
     to_check = [(zone.name, zone_filename(zone)) for zone in zones]
     if rpz_active(db):
         to_check.append((settings.rpz_zone_name, f"db.{settings.rpz_zone_name}"))
-    for zone_name, filename in to_check:
+    for _zone_name, filename in to_check:
         (staging / filename).write_text(rendered["zone_files"][filename])
 
     # 2. validate
