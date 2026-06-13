@@ -131,8 +131,11 @@ def _apply_cert_metadata(row: Certificate, cert: x509.Certificate) -> None:
     row.serial = format(cert.serial_number, "x")
     row.fingerprint_sha256 = cert.fingerprint(hashes.SHA256()).hex(":")
     row.key_type = _key_type(cert.public_key())
-    row.not_before = cert.not_valid_before
-    row.not_after = cert.not_valid_after
+    # Store naive UTC to match the rest of the schema; the *_utc accessors are
+    # the non-deprecated way to read these (the bare properties return naive
+    # datetimes and emit a CryptographyDeprecationWarning).
+    row.not_before = cert.not_valid_before_utc.replace(tzinfo=None)
+    row.not_after = cert.not_valid_after_utc.replace(tzinfo=None)
     row.is_self_signed = cert.issuer == cert.subject
 
 
@@ -171,7 +174,7 @@ def generate_self_signed(
     key = _new_key(key_type)
     x509_subject = subject.to_x509_name()
     san_names = _san_list(sans or [subject.common_name])
-    now = dt.datetime.utcnow()
+    now = dt.datetime.now(dt.UTC)
     builder = (
         x509.CertificateBuilder()
         .subject_name(x509_subject)
@@ -410,7 +413,7 @@ def materialize(db: Session) -> dict:
         _atomic_write(os.path.join(tls_dir, "http-redirect.conf"), _redirect_snippet(db))
         # Touch a reload marker the proxy sidecar watches to trigger `nginx -s reload`.
         _atomic_write(
-            os.path.join(tls_dir, "reload"), dt.datetime.utcnow().isoformat() + "\n"
+            os.path.join(tls_dir, "reload"), dt.datetime.now(dt.UTC).isoformat() + "\n"
         )
         written += ["ca-bundle.crt", "options.conf", "http-redirect.conf"]
         return {"tls_dir": tls_dir, "written": written, "ok": True}

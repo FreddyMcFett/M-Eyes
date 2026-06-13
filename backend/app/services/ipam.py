@@ -129,7 +129,8 @@ def next_available_ip(db: Session, network: Network) -> str:
     if net.prefixlen < MAX_SCAN_PREFIX:
         raise HTTPException(
             status_code=422,
-            detail=f"Network too large to scan (>{MAX_SCAN_PREFIX}); allocate from a smaller subnet",
+            detail=f"Network too large to scan (larger than /{MAX_SCAN_PREFIX}); "
+                   "allocate from a smaller subnet",
         )
     taken = {row.ip for row in db.scalars(select(IPAddress).where(IPAddress.network_id == network.id))}
     taken |= dhcp_range_members(db, network)
