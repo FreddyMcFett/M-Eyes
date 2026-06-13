@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+## [1.4.1](https://github.com/FreddyMcFett/M-Eyes/compare/v1.4.0...v1.4.1) (2026-06-13)
+
+
+### Bug Fixes
+
+* **certs:** resolve cryptography/datetime deprecations; clarify IPAM scan error ([35f7bff](https://github.com/FreddyMcFett/M-Eyes/commit/35f7bff3148f6efb66c64056d4dceb2219781971))
+
 # [1.4.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.3.1...v1.4.0) (2026-06-13)
 
 
