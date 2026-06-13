@@ -24,7 +24,11 @@ automatic configuration versioning and self-generating documentation.
 | **Extensible Attributes** | typed, admin-defined metadata (string / integer / email / URL / date / enum) attachable to networks, IPs, zones, records and hosts |
 | **Search** | global search across networks, IPs, zones, records, hosts and firewall rules from the top bar |
 | **Fortinet** | token-protected External Resource feeds (subnets / tagged objects / blocklist / FQDNs), per-feed FortiGate CLI snippets, token rotation, syslog forwarding to FortiAnalyzer or any collector |
-| **Automation** | **API keys / service accounts** (`X-API-Key`) with optional expiry for Terraform, Ansible and scripts — every change attributed in the changelog |
+| **Enterprise integrations** | pluggable connectors for **FortiGate** (import interface subnets → IPAM, DHCP leases → assets), **FortiManager** (push networks as address objects), **FortiAnalyzer**, **FortiAuthenticator**, **Microsoft DNS** (AXFR import) and **Microsoft Entra ID / Intune** (device import) — test & sync per connector |
+| **Asset management** | built-in **CMDB cross-referenced to DDI**: assets with interfaces linked to IPAM by MAC/IP, lifecycle/owner/location/criticality, auto-reconcile from IPAM, discovery and integrations |
+| **Autonomy** | background **automation engine** — scheduled discovery sweeps, asset reconciliation, integration syncs, **drift-gated auto-deploy** and threat-feed refresh, all attributed and auditable |
+| **SSO / RBAC** | enterprise **SAML 2.0 SSO** (M-Eyes as SP) with **FortiAuthenticator** as the recommended IdP, signed-assertion verification, group→role mapping and JIT provisioning; three-tier **RBAC** (admin / operator / viewer) and user management |
+| **Automation API** | **API keys / service accounts** (`X-API-Key`) with optional expiry for Terraform, Ansible and scripts — every change attributed in the changelog |
 | **Versioning** | immutable changelog with before/after diffs, global config version, one-click rollback, auto-generated Markdown runbook, deploy-drift display |
 | **Operations** | live dashboard (SSE event stream + polling), event log with live tail, debug mode, engine connectivity tests, diagnostics bundle, **one-click config backup & restore**, in-UI update check |
 | **HTTPS / TLS** | HTTPS out of the box with an auto-generated self-signed cert; in-UI certificate manager — import a CA, generate a CSR, import the signed cert, activate it and hot-reload the proxy; HTTP→HTTPS redirect, HSTS and minimum-TLS-version controls |
@@ -109,6 +113,23 @@ end
    propagate to every FortiGate on its next refresh.
 
 Full guide: [docs/fortinet-integration.md](docs/fortinet-integration.md)
+
+## Enterprise
+
+M-Eyes is built for the enterprise edge of the Fortinet + Microsoft world:
+
+- **SAML Single Sign-On** — M-Eyes is a SAML 2.0 Service Provider. Wire it to
+  **FortiAuthenticator** (recommended), Microsoft Entra ID, Okta or any IdP;
+  assertions are signature-verified and IdP groups map to M-Eyes roles. Easy
+  config with advanced options, step-by-step IdP walkthrough:
+  [docs/saml-sso.md](docs/saml-sso.md).
+- **Integrations** — one-click connectors for FortiGate, FortiManager,
+  FortiAnalyzer, FortiAuthenticator, Microsoft DNS and Microsoft Entra ID/Intune:
+  [docs/integrations.md](docs/integrations.md).
+- **Asset management** — a CMDB cross-referenced to your DDI data:
+  [docs/asset-management.md](docs/asset-management.md).
+- **Autonomy** — scheduled, drift-gated automation:
+  [docs/automation.md](docs/automation.md).
 
 ## Repository layout
 

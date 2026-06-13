@@ -298,3 +298,148 @@ export interface TlsStatus {
   tls_dir: string;
   settings: Record<string, string>;
 }
+
+export interface AssetInterface {
+  id?: number;
+  name: string;
+  mac: string;
+  ip: string;
+  hostname: string;
+  ip_id: number | null;
+}
+
+export interface Asset {
+  id: number;
+  name: string;
+  asset_type: string;
+  status: string;
+  criticality: string;
+  owner: string;
+  location: string;
+  department: string;
+  vendor: string;
+  model: string;
+  serial_number: string;
+  operating_system: string;
+  description: string;
+  source: string;
+  external_id: string;
+  last_seen: string | null;
+  tags: Tag[];
+  interfaces: AssetInterface[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AssetMeta {
+  types: string[];
+  statuses: string[];
+  criticality: string[];
+}
+
+export interface ConnectorField {
+  key: string;
+  label: string;
+  type: string;
+  required: boolean;
+  help: string;
+  placeholder: string;
+  default: string;
+  advanced: boolean;
+}
+
+export interface ConnectorDescriptor {
+  kind: string;
+  label: string;
+  category: string;
+  description: string;
+  capabilities: string[];
+  uses_base_url: boolean;
+  base_url_label: string;
+  base_url_placeholder: string;
+  uses_username: boolean;
+  username_label: string;
+  uses_secret: boolean;
+  secret_label: string;
+  fields: ConnectorField[];
+}
+
+export interface Integration {
+  id: number;
+  name: string;
+  kind: string;
+  enabled: boolean;
+  base_url: string;
+  username: string;
+  verify_tls: boolean;
+  settings: Record<string, string>;
+  secret_set: boolean;
+  last_sync_at: string | null;
+  last_status: string;
+  last_message: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AutomationRule {
+  id: number;
+  name: string;
+  kind: string;
+  enabled: boolean;
+  interval_seconds: number;
+  config: Record<string, unknown>;
+  last_run_at: string | null;
+  next_run_at: string | null;
+  last_status: string;
+  last_message: string;
+  run_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SsoConfig {
+  enabled: boolean;
+  button_label: string;
+  idp_entity_id: string;
+  idp_sso_url: string;
+  idp_slo_url: string;
+  idp_x509_cert: string;
+  sp_entity_id: string;
+  base_url: string;
+  attr_username: string;
+  attr_email: string;
+  attr_display_name: string;
+  attr_groups: string;
+  role_mappings: Record<string, string>;
+  default_role: string;
+  allow_jit_provisioning: boolean;
+  name_id_format: string;
+  sign_authn_requests: boolean;
+  want_assertions_signed: boolean;
+  want_response_signed: boolean;
+  force_authn: boolean;
+  allowed_clock_skew_seconds: number;
+  signature_algorithm: string;
+  sp_metadata_url: string;
+  acs_url: string;
+  sp_entity_id_effective: string;
+  sp_signing_configured: boolean;
+}
+
+export interface SsoStatus {
+  enabled: boolean;
+  button_label: string;
+  login_url: string;
+}
+
+export interface ManagedUser {
+  id: number;
+  username: string;
+  role: string;
+  email: string;
+  display_name: string;
+  auth_source: string;
+  is_active: boolean;
+  last_login_at: string | null;
+  created_at: string;
+}

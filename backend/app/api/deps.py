@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from fastapi import Depends, Header, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
@@ -6,9 +8,19 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import ApiKey, User
 from app.models.base import utcnow
+from app.models.user import ROLES
 from app.security import decode_access_token, hash_api_key
 
 bearer = HTTPBearer(auto_error=False)
+
+
+def role_at_least(role: str, minimum: str) -> bool:
+    """True when `role` is at least as privileged as `minimum` in the ROLES hierarchy."""
+    try:
+        return ROLES.index(role) >= ROLES.index(minimum)
+    except ValueError:
+        # Unknown role (e.g. a legacy value): only grant if it matches exactly.
+        return role == minimum
 
 
 def _user_from_api_key(db: Session, key: str) -> User:
@@ -38,4 +50,23 @@ def get_current_user(
     user = db.scalar(select(User).where(User.username == username))
     if user is None:
         raise HTTPException(status_code=401, detail="User no longer exists")
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="User account is disabled")
     return user
+
+
+def require_role(minimum: str) -> Callable[[User], User]:
+    """Dependency factory: require the caller to hold at least `minimum` role.
+
+    Usage: `user: User = Depends(require_role("operator"))`.
+    """
+
+    def checker(user: User = Depends(get_current_user)) -> User:
+        if not role_at_least(user.role, minimum):
+            raise HTTPException(
+                status_code=403,
+                detail=f"This action requires the '{minimum}' role or higher",
+            )
+        return user
+
+    return checker

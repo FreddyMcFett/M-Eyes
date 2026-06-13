@@ -1,6 +1,7 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, setToken } from '../api/client';
+import { SsoStatus } from '../api/types';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -8,6 +9,14 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [sso, setSso] = useState<SsoStatus | null>(null);
+
+  useEffect(() => {
+    api.get<SsoStatus>('/api/v1/sso/status').then(setSso).catch(() => setSso(null));
+    if (new URLSearchParams(window.location.search).get('sso_error')) {
+      setError('Single sign-on failed. Please try again or use local credentials.');
+    }
+  }, []);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -59,6 +68,21 @@ export default function Login() {
         >
           {busy ? 'Signing in…' : 'Login'}
         </button>
+        {sso?.enabled && (
+          <>
+            <div className="flex items-center gap-2 my-4">
+              <div className="flex-1 h-px bg-slate-600" />
+              <span className="text-slate-500 text-[10px] uppercase tracking-widest">or</span>
+              <div className="flex-1 h-px bg-slate-600" />
+            </div>
+            <a
+              href={sso.login_url}
+              className="block w-full py-2 rounded border border-accent text-accent hover:bg-accent hover:text-white font-semibold text-sm text-center transition-colors"
+            >
+              {sso.button_label}
+            </a>
+          </>
+        )}
         <p className="text-slate-500 text-[11px] mt-4 text-center">Default credentials: admin / admin</p>
       </form>
     </div>
