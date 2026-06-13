@@ -17,6 +17,11 @@ nav:
   - Architecture: architecture.md
   - Infoblox-style Features: infoblox-features.md
   - Fortinet Integration: fortinet-integration.md
+  - Enterprise:
+    - SAML Single Sign-On: saml-sso.md
+    - Asset Management: asset-management.md
+    - Integrations (Fortinet & Microsoft): integrations.md
+    - Automation & Autonomy: automation.md
   - Versioning & Auditing: versioning.md
   - Upgrading & Backup: upgrade.md
   - API Reference: api/reference.md

@@ -17,6 +17,10 @@ class UserOut(ORMModel):
     id: int
     username: str
     role: str
+    email: str = ""
+    display_name: str = ""
+    auth_source: str = "local"
+    is_active: bool = True
 
 
 class PasswordChangeIn(BaseModel):

@@ -4,7 +4,13 @@ import { getToken } from './api/client';
 import AppShell from './components/AppShell';
 import { ToastProvider } from './components/Toast';
 import Login from './pages/Login';
+import SsoCallback from './pages/SsoCallback';
 import Dashboard from './pages/Dashboard';
+import Assets from './pages/assets/Assets';
+import Integrations from './pages/integrations/Integrations';
+import Automation from './pages/automation/Automation';
+import Sso from './pages/system/Sso';
+import Users from './pages/system/Users';
 import Networks from './pages/ipam/Networks';
 import NetworkDetail from './pages/ipam/NetworkDetail';
 import Zones from './pages/dns/Zones';
@@ -39,6 +45,7 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/sso/callback" element={<SsoCallback />} />
             <Route
               path="/"
               element={
@@ -57,6 +64,7 @@ export default function App() {
               <Route path="dhcp/:id" element={<SubnetDetail />} />
               <Route path="leases" element={<Leases />} />
               <Route path="hosts" element={<Hosts />} />
+              <Route path="assets" element={<Assets />} />
               <Route path="feeds" element={<Feeds />} />
               <Route path="blocklist" element={<Blocklist />} />
               <Route path="dnsfw" element={<DnsFirewall />} />
@@ -64,6 +72,10 @@ export default function App() {
               <Route path="changelog" element={<Changelog />} />
               <Route path="events" element={<Events />} />
               <Route path="runbook" element={<Runbook />} />
+              <Route path="integrations" element={<Integrations />} />
+              <Route path="automation" element={<Automation />} />
+              <Route path="users" element={<Users />} />
+              <Route path="sso" element={<Sso />} />
               <Route path="settings" element={<Settings />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

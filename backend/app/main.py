@@ -9,7 +9,9 @@ from sqlalchemy import select
 from app.api.v1 import (
     addresses,
     apikeys,
+    assets,
     auth,
+    automation,
     blocklist,
     certs,
     changelog,
@@ -19,14 +21,17 @@ from app.api.v1 import (
     extattrs,
     feeds_admin,
     hosts,
+    integrations,
     logs,
     networks,
     records,
     rpz,
     runbook,
     search,
+    sso,
     system,
     tags,
+    users,
     views,
     zones,
 )
@@ -35,6 +40,7 @@ from app.database import SessionLocal, engine
 from app.feeds.router import router as feeds_router
 from app.models import Base, User
 from app.security import hash_password
+from app.services import automation as automation_service
 from app.services import certs as certs_service
 from app.services import threat_feeds as threat_feed_service
 from app.services.broker import broker
@@ -62,6 +68,21 @@ async def threat_feed_refresher() -> None:
         await asyncio.sleep(THREAT_FEED_CHECK_SECONDS)
 
 
+def _run_due_automation() -> None:
+    with SessionLocal() as db:
+        automation_service.run_due(db)
+
+
+async def automation_scheduler() -> None:
+    """Background loop: run autonomous automation rules as they fall due."""
+    while True:
+        await asyncio.sleep(automation_service.SCHEDULER_TICK_SECONDS)
+        try:
+            await asyncio.to_thread(_run_due_automation)
+        except Exception:  # noqa: BLE001 - the scheduler must survive any rule error
+            logger.exception("Automation scheduler tick failed")
+
+
 def seed_admin() -> None:
     with SessionLocal() as db:
         if db.scalar(select(User).limit(1)) is None:
@@ -87,8 +108,10 @@ async def lifespan(app: FastAPI):
         certs_service.ensure_bootstrap(db)
     broker.set_loop(asyncio.get_running_loop())
     refresher = asyncio.create_task(threat_feed_refresher())
+    scheduler = asyncio.create_task(automation_scheduler())
     yield
     refresher.cancel()
+    scheduler.cancel()
 
 
 def create_app() -> FastAPI:
@@ -110,7 +133,8 @@ def create_app() -> FastAPI:
         zones.router, views.router, records.router, dhcp.router, hosts.router,
         feeds_admin.router, blocklist.router, changelog.router, deploy.router,
         runbook.router, logs.router, system.router, rpz.router, extattrs.router,
-        search.router, certs.router, apikeys.router,
+        search.router, certs.router, apikeys.router, users.router, sso.router,
+        assets.router, integrations.router, automation.router,
     )
     for router in api_routers:
         app.include_router(router, prefix="/api/v1")

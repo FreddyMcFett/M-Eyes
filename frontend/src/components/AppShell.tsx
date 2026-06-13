@@ -3,17 +3,21 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Activity,
+  Boxes,
   ChevronDown,
   ChevronRight,
+  Cpu,
   FileText,
   Globe,
   History,
+  KeyRound,
   LayoutDashboard,
   Layers,
   List,
   ListChecks,
   LogOut,
   Network as NetworkIcon,
+  Plug,
   Rss,
   Server,
   Settings as SettingsIcon,
@@ -22,6 +26,7 @@ import {
   ShieldOff,
   Tags,
   User,
+  Users as UsersIcon,
 } from 'lucide-react';
 import { api, clearToken } from '../api/client';
 import { EngineStatus } from '../api/types';
@@ -50,6 +55,7 @@ const SECTIONS: NavSection[] = [
       { to: '/dhcp', label: 'DHCP', icon: <Server size={14} /> },
       { to: '/leases', label: 'Leases', icon: <ListChecks size={14} /> },
       { to: '/hosts', label: 'Hosts', icon: <Activity size={14} /> },
+      { to: '/assets', label: 'Assets', icon: <Boxes size={14} /> },
     ],
   },
   {
@@ -59,6 +65,14 @@ const SECTIONS: NavSection[] = [
       { to: '/feeds', label: 'Fortinet Feeds', icon: <Rss size={14} /> },
       { to: '/blocklist', label: 'Blocklist', icon: <ShieldBan size={14} /> },
       { to: '/dnsfw', label: 'DNS Firewall', icon: <ShieldOff size={14} /> },
+    ],
+  },
+  {
+    label: 'Enterprise',
+    icon: <Plug size={15} />,
+    items: [
+      { to: '/integrations', label: 'Integrations', icon: <Plug size={14} /> },
+      { to: '/automation', label: 'Automation', icon: <Cpu size={14} /> },
     ],
   },
   {
@@ -152,6 +166,12 @@ export default function AppShell() {
             </div>
             <NavLink to="/extattrs" className={linkClass}>
               <Tags size={14} /> Extensible Attrs
+            </NavLink>
+            <NavLink to="/users" className={linkClass}>
+              <UsersIcon size={14} /> Users &amp; Roles
+            </NavLink>
+            <NavLink to="/sso" className={linkClass}>
+              <KeyRound size={14} /> SSO / SAML
             </NavLink>
             <NavLink to="/settings" className={linkClass}>
               <SettingsIcon size={14} /> Settings
