@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+# [1.4.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.3.1...v1.4.0) (2026-06-13)
+
+
+### Features
+
+* enterprise SSO, asset management, Fortinet/Microsoft integrations, autonomy ([71102e4](https://github.com/FreddyMcFett/M-Eyes/commit/71102e4c75e9d151faa9eb2a4278d206d0aa1b86))
+
 ## [1.3.1](https://github.com/FreddyMcFett/M-Eyes/compare/v1.3.0...v1.3.1) (2026-06-12)
 
 
