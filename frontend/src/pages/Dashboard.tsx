@@ -34,12 +34,12 @@ export default function Dashboard() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        <StatCard label="Networks" value={counts.networks ?? '…'} icon={<List size={22} />} accent />
-        <StatCard label="IP Addresses" value={counts.ip_addresses ?? '…'} icon={<Activity size={22} />} />
-        <StatCard label="DNS Zones" value={counts.zones ?? '…'} icon={<Globe size={22} />} />
-        <StatCard label="Records" value={counts.records ?? '…'} icon={<Globe size={22} />} />
-        <StatCard label="DHCP Scopes" value={counts.dhcp_subnets ?? '…'} icon={<Server size={22} />} />
-        <StatCard label="Feeds" value={counts.feeds ?? '…'} icon={<Rss size={22} />} />
+        <StatCard label="Networks" value={counts.networks ?? '…'} icon={<List size={22} />} accent to="/ipam" />
+        <StatCard label="IP Addresses" value={counts.ip_addresses ?? '…'} icon={<Activity size={22} />} to="/ipam" />
+        <StatCard label="DNS Zones" value={counts.zones ?? '…'} icon={<Globe size={22} />} to="/dns" />
+        <StatCard label="Records" value={counts.records ?? '…'} icon={<Globe size={22} />} to="/dns" />
+        <StatCard label="DHCP Scopes" value={counts.dhcp_subnets ?? '…'} icon={<Server size={22} />} to="/dhcp" />
+        <StatCard label="Feeds" value={counts.feeds ?? '…'} icon={<Rss size={22} />} to="/feeds" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

@@ -9,6 +9,7 @@ import {
   Cpu,
   FileText,
   Globe,
+  HelpCircle,
   History,
   KeyRound,
   LayoutDashboard,
@@ -194,6 +195,15 @@ export default function AppShell() {
             <GlobalSearch />
             <EngineDot status={engines?.bind.last_status ?? null} label="BIND" />
             <EngineDot status={engines?.kea.last_status ?? null} label="Kea" />
+            <NavLink
+              to="/docs"
+              className={({ isActive }) =>
+                `flex items-center transition-colors ${isActive ? 'text-accent' : 'text-slate-300 hover:text-white'}`
+              }
+              title="Documentation"
+            >
+              <HelpCircle size={17} />
+            </NavLink>
             <span className="flex items-center gap-1.5 text-xs text-slate-300">
               <User size={13} /> admin
             </span>

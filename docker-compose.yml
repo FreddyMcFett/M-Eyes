@@ -40,7 +40,7 @@ services:
       MEYES_KEA_CA_URL: http://kea-ctrl-agent:8000
       MEYES_TLS_DIR: /shared/tls
       MEYES_TLS_DEFAULT_HOSTNAME: ${MEYES_HOSTNAME:-m-eyes.local}
-      MEYES_SEED_DEMO: ${MEYES_SEED_DEMO:-true}
+      MEYES_SEED_DEMO: ${MEYES_SEED_DEMO:-false}
     volumes:
       - bind-config:/shared/bind
       - kea-config:/shared/kea

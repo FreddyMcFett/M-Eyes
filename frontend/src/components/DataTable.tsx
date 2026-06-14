@@ -54,9 +54,12 @@ export default function DataTable<T>({
         {toolbar}
         <div className="ml-auto flex items-center gap-2">
           <div className="relative">
-            <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted" />
+            <Search
+              size={15}
+              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted"
+            />
             <input
-              className="f-input pl-7 w-56"
+              className="f-input !pl-9 w-56"
               placeholder="Search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
