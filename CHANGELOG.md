@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+# [1.5.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.4.1...v1.5.0) (2026-06-14)
+
+
+### Features
+
+* in-app docs, interactive dashboard, search-icon fix, no demo data by default ([acb4f19](https://github.com/FreddyMcFett/M-Eyes/commit/acb4f1963dd055394355f182457a5b972f9d67f3))
+
 ## [1.4.1](https://github.com/FreddyMcFett/M-Eyes/compare/v1.4.0...v1.4.1) (2026-06-13)
 
 
