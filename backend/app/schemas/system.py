@@ -41,3 +41,8 @@ class SettingsOut(BaseModel):
 
 class SettingsIn(BaseModel):
     values: dict[str, str]
+
+
+class UpdateTrigger(BaseModel):
+    # Optional explicit target; when omitted the latest GitHub release is used.
+    target_version: str | None = None

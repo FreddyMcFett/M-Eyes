@@ -6,12 +6,12 @@ from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, require_role
 from app.config import get_settings
 from app.database import get_db
 from app.models import Deployment, Event, Network, Record, User, Zone
-from app.schemas.system import SettingsIn, SettingsOut
-from app.services import app_settings, audit, backup, certs, events
+from app.schemas.system import SettingsIn, SettingsOut, UpdateTrigger
+from app.services import app_settings, audit, backup, certs, events, updater
 from app.version import __version__
 
 router = APIRouter(prefix="/system", tags=["system"])
@@ -69,11 +69,10 @@ def syslog_test(db: Session = Depends(get_db), user: User = Depends(get_current_
     }
 
 
-@router.get("/update-check")
-def update_check(user: User = Depends(get_current_user)):
+def _compute_update_status(force: bool = False) -> dict:
     """Compare the running version against the latest GitHub release (cached 1h)."""
     now = time.monotonic()
-    if _update_cache["result"] is None or now - _update_cache["ts"] > _UPDATE_CACHE_TTL:
+    if force or _update_cache["result"] is None or now - _update_cache["ts"] > _UPDATE_CACHE_TTL:
         result = {"current_version": __version__, "latest_version": None,
                   "update_available": False, "release_url": RELEASES_URL, "error": None}
         try:
@@ -89,7 +88,72 @@ def update_check(user: User = Depends(get_current_user)):
         except (httpx.HTTPError, ValueError) as exc:
             result["error"] = f"Update check failed: {exc}"[:255]
         _update_cache.update(ts=now, result=result)
-    return _update_cache["result"]
+    return dict(_update_cache["result"])
+
+
+@router.get("/update-check")
+def update_check(force: bool = False, user: User = Depends(get_current_user)):
+    """Compare the running version against the latest GitHub release (cached 1h).
+
+    Pass ``force=true`` to bypass the cache (used by the "Check now" button).
+    ``in_app_update`` reports whether this deployment can update itself from the
+    UI (the privileged ``updater`` sidecar is wired up).
+    """
+    result = _compute_update_status(force=force)
+    result["in_app_update"] = updater.is_supported()
+    return result
+
+
+@router.post("/update")
+def trigger_update(payload: UpdateTrigger | None = Body(default=None),
+                   db: Session = Depends(get_db),
+                   user: User = Depends(require_role("admin"))):
+    """Pull the latest images and restart the M-Eyes services in place. Admin only.
+
+    Hands the work to the privileged ``updater`` sidecar; the API itself never
+    touches Docker. Poll ``/update/status`` for progress (the API restarts as
+    part of the update, so expect a brief window where it is unreachable)."""
+    if not updater.is_supported():
+        raise HTTPException(
+            status_code=400,
+            detail="In-app update is not available on this deployment. Upgrade on the host "
+                   "with 'docker compose pull && docker compose up -d'.",
+        )
+    if updater.is_active():
+        raise HTTPException(status_code=409, detail="An update is already in progress")
+
+    target = payload.target_version if payload else None
+    if not target:
+        check = _compute_update_status()
+        if not check.get("update_available"):
+            raise HTTPException(status_code=400, detail="M-Eyes is already up to date")
+        target = check.get("latest_version")
+    if not updater.valid_version(target):
+        raise HTTPException(status_code=422, detail=f"Invalid target version: {target!r}")
+
+    try:
+        status = updater.request_update(target, user.username)
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    events.emit(db, "warning", "system",
+                f"In-app update to v{target} started by {user.username}",
+                {"target_version": target})
+    db.commit()
+    return status
+
+
+@router.get("/update/status")
+def update_status(user: User = Depends(get_current_user)):
+    """Progress of an in-app update, written by the updater sidecar.
+
+    ``current_version`` is the version of the API answering this request, so the
+    UI knows the update finished once it equals the requested target."""
+    status = updater.read_status()
+    status["current_version"] = __version__
+    status["in_app_update"] = updater.is_supported()
+    status["log_tail"] = updater.read_log_tail()
+    return status
 
 
 @router.get("/backup")

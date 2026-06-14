@@ -6,20 +6,50 @@ database, plus the engine-config and TLS volumes), and database schema
 migrations (Alembic) run automatically every time the API container starts —
 old databases are migrated forward without manual steps.
 
-## Upgrading a Docker install
+## In-app update (recommended)
+
+You don't have to SSH into the server to upgrade. Open **System → Settings →
+Backup & Updates → Software Updates**:
+
+1. **Check now** compares the running version against the latest GitHub release.
+2. When an update is available, **Update now & restart** downloads the new
+   images and restarts the M-Eyes services in place — live, from the browser.
+   The page shows progress, briefly loses contact while the API restarts, then
+   reconnects and offers a **Reload** once the new version is running.
+
+Your data is preserved (the database lives in a persistent volume and schema
+migrations run automatically on start), and DNS/DHCP keep serving throughout —
+only the control plane (API + UI) is restarted, not BIND9/Kea/PostgreSQL.
+
+### How it works & security
+
+A small `updater` sidecar — the only container with access to the Docker
+socket — performs `docker compose pull` + `docker compose up -d` for the app
+services when you click the button. The internet-facing API never touches
+Docker; it only drops a request (a validated version string) into a shared
+volume that the sidecar acts on, and only the authenticated, admin-only update
+API can do so.
+
+Because mounting the Docker socket grants the sidecar root-equivalent control
+of the host, you can remove the `updater` service from `docker-compose.yml` to
+disable in-app updates — the UI then falls back to showing the manual commands
+below.
+
+> **Note:** in-app update reuses your `.env` for the recreated containers
+> (`MEYES_JWT_SECRET`, `MEYES_HOSTNAME`, …). Keep your configuration in `.env`
+> (as in `.env.example`) rather than only in the host shell, so logins survive
+> the restart.
+
+## Upgrading manually on the host
 
 Every release publishes versioned images to GitHub Container Registry
 (`ghcr.io/freddymcfett/m-eyes-api` and `ghcr.io/freddymcfett/m-eyes-frontend`),
-so an upgrade is just:
+so a manual upgrade is just:
 
 ```bash
 docker compose pull
 docker compose up -d
 ```
-
-The UI tells you when a new release is available: **System → Settings →
-Backup & Updates** compares the running version against the latest GitHub
-release.
 
 ### Pinning a version
 
