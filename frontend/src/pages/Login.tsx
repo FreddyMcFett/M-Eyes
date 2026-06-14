@@ -83,7 +83,6 @@ export default function Login() {
             </a>
           </>
         )}
-        <p className="text-slate-500 text-[11px] mt-4 text-center">Default credentials: admin / admin</p>
       </form>
     </div>
   );

@@ -10,10 +10,20 @@ docker compose up -d --build
 
 | Service | URL |
 |---|---|
-| Web UI | http://localhost:8080 |
+| Web UI | **https://localhost:8443** |
 | API / OpenAPI docs | http://localhost:8000/docs |
-| Fortinet feeds | http://localhost:8080/feeds/&lt;slug&gt;.txt |
+| Fortinet feeds | https://localhost:8443/feeds/&lt;slug&gt;.txt |
 | BIND9 (DNS) | localhost:5353 |
+
+The web UI is served over **HTTPS on port 8443**. Plain HTTP on
+`http://localhost:8080` redirects to HTTPS, so always open the UI with
+`https://` — pointing a browser at `:8080` directly can fail with
+`ERR_SSL_PROTOCOL_ERROR` when the browser forces TLS on the HTTP port.
+
+On first start M-Eyes generates a **self-signed certificate**, so your browser
+will warn until you import a CA-signed one (do this from
+*System → Settings → HTTPS / TLS*). Set `MEYES_HOSTNAME` before the first start
+to control the certificate's CN/SAN.
 
 Login with **admin / admin** (change the password in *System → Settings*).
 Demo data is seeded automatically; set `MEYES_SEED_DEMO=false` to skip.
@@ -25,7 +35,7 @@ Try it:
 dig @localhost -p 5353 ns1.corp.m-eyes.local
 
 # fetch a Fortinet feed (token shown on the Feeds page):
-curl "http://localhost:8080/feeds/networks.txt?token=<token>"
+curl -k "https://localhost:8443/feeds/networks.txt?token=<token>"
 ```
 
 !!! warning "Production notes"
