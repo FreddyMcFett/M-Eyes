@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+# [1.6.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.5.0...v1.6.0) (2026-06-14)
+
+
+### Features
+
+* **updates:** one-click in-app update with clean service restart ([b504d91](https://github.com/FreddyMcFett/M-Eyes/commit/b504d91e7232439746b856e8019e413458f0ba2e))
+
 # [1.5.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.4.1...v1.5.0) (2026-06-14)
 
 
