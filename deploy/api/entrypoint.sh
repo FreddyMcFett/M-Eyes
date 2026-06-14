@@ -39,8 +39,8 @@ fi
 echo "Running database migrations ..."
 alembic upgrade head
 
-if [ "${MEYES_SEED_DEMO:-true}" = "true" ]; then
-  echo "Seeding demo data (set MEYES_SEED_DEMO=false to skip) ..."
+if [ "${MEYES_SEED_DEMO:-false}" = "true" ]; then
+  echo "Seeding demo data (MEYES_SEED_DEMO=true) ..."
   python -m app.scripts.seed
 fi
 

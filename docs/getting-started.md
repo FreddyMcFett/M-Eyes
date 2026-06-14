@@ -26,7 +26,9 @@ will warn until you import a CA-signed one (do this from
 to control the certificate's CN/SAN.
 
 Login with **admin / admin** (change the password in *System → Settings*).
-Demo data is seeded automatically; set `MEYES_SEED_DEMO=false` to skip.
+M-Eyes starts **empty** by default — build your address plan from scratch. To
+populate sample networks, zones and scopes for evaluation, set
+`MEYES_SEED_DEMO=true` before the first start.
 
 Try it:
 
@@ -51,7 +53,7 @@ Backend:
 ```bash
 cd backend
 pip install -e ".[dev]"
-python -m app.scripts.seed          # SQLite + demo data
+python -m app.scripts.seed          # optional: SQLite + sample demo data
 uvicorn app.main:app --reload       # http://localhost:8000
 ```
 

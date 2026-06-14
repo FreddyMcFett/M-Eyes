@@ -46,9 +46,12 @@ export default function GlobalSearch() {
 
   return (
     <div className="relative" ref={wrapper}>
-      <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-muted" />
+      <Search
+        size={15}
+        className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted"
+      />
       <input
-        className="f-input pl-7 w-64"
+        className="f-input !pl-9 w-64"
         placeholder="Search everything…"
         value={term}
         onChange={(e) => {

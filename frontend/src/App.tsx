@@ -28,6 +28,7 @@ import Changelog from './pages/Changelog';
 import Events from './pages/Events';
 import Runbook from './pages/Runbook';
 import Settings from './pages/Settings';
+import Documentation from './pages/Documentation';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -77,6 +78,7 @@ export default function App() {
               <Route path="users" element={<Users />} />
               <Route path="sso" element={<Sso />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="docs" element={<Documentation />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
