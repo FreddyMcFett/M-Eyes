@@ -30,7 +30,7 @@ automatic configuration versioning and self-generating documentation.
 | **SSO / RBAC** | enterprise **SAML 2.0 SSO** (M-Eyes as SP) with **FortiAuthenticator** as the recommended IdP, signed-assertion verification, group→role mapping and JIT provisioning; three-tier **RBAC** (admin / operator / viewer) and user management |
 | **Automation API** | **API keys / service accounts** (`X-API-Key`) with optional expiry for Terraform, Ansible and scripts — every change attributed in the changelog |
 | **Versioning** | immutable changelog with before/after diffs, global config version, one-click rollback, auto-generated Markdown runbook, deploy-drift display |
-| **Operations** | live dashboard (SSE event stream + polling), event log with live tail, debug mode, engine connectivity tests, diagnostics bundle, **one-click config backup & restore**, in-UI update check |
+| **Operations** | live dashboard (SSE event stream + polling), event log with live tail, debug mode, engine connectivity tests, diagnostics bundle, **one-click config backup & restore**, **in-app update — check, upgrade and restart the services from the UI, no SSH** |
 | **HTTPS / TLS** | HTTPS out of the box with an auto-generated self-signed cert; in-UI certificate manager — import a CA, generate a CSR, import the signed cert, activate it and hot-reload the proxy; HTTP→HTTPS redirect, HSTS and minimum-TLS-version controls |
 
 ## Architecture
@@ -71,10 +71,12 @@ automatically on start:
 docker compose pull && docker compose up -d
 ```
 
-Pin a release with `MEYES_VERSION=x.y.z` in `.env`; the UI shows when a new
-release is available (**System → Settings → Backup & Updates**), and the same
-page exports/restores the whole configuration as a single JSON backup.
-Details: [docs/upgrade.md](docs/upgrade.md).
+Or update **without SSH**: **System → Settings → Backup & Updates → Software
+Updates → Update now & restart** pulls the new images and restarts the services
+in place, live from the browser. Pin a release with `MEYES_VERSION=x.y.z` in
+`.env` for controlled upgrades; the same page exports/restores the whole
+configuration as a single JSON backup. Details:
+[docs/upgrade.md](docs/upgrade.md).
 
 ## Quick start (development)
 

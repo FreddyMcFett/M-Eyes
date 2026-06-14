@@ -222,6 +222,20 @@ export interface UpdateStatus {
   update_available: boolean;
   release_url: string;
   error: string | null;
+  in_app_update?: boolean;
+}
+
+export interface UpdateProgress {
+  phase: 'idle' | 'requested' | 'pulling' | 'recreating' | 'done' | 'error';
+  message: string;
+  target_version: string | null;
+  current_version?: string;
+  in_app_update?: boolean;
+  log_tail?: string;
+  processed_id?: string | null;
+  returncode?: number | null;
+  started_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface ExtAttrDef {

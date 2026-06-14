@@ -2,19 +2,25 @@ import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Activity,
+  AlertTriangle,
   Bug,
+  CheckCircle2,
   Copy,
   DatabaseBackup,
+  DownloadCloud,
   KeyRound,
+  Loader2,
   Lock,
   Radio,
+  RefreshCw,
+  RotateCw,
   Server,
   ShieldCheck,
   SlidersHorizontal,
   Trash2,
 } from 'lucide-react';
 import { api } from '../api/client';
-import { ApiKey, TlsStatus, UpdateStatus } from '../api/types';
+import { ApiKey, TlsStatus, UpdateProgress, UpdateStatus } from '../api/types';
 import Certificates from '../components/Certificates';
 import ConfirmDialog from '../components/ConfirmDialog';
 import FormField from '../components/FormField';
@@ -45,6 +51,11 @@ export default function Settings() {
   const [deletingKey, setDeletingKey] = useState<ApiKey | null>(null);
   const [restoreConfirm, setRestoreConfirm] = useState<Record<string, unknown> | null>(null);
   const restoreInput = useRef<HTMLInputElement>(null);
+  const [updateConfirm, setUpdateConfirm] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [progress, setProgress] = useState<UpdateProgress | null>(null);
+  const [updateDone, setUpdateDone] = useState(false);
+  const targetVersion = useRef<string | null>(null);
 
   const { data } = useQuery({
     queryKey: ['app-settings'],
@@ -69,6 +80,72 @@ export default function Settings() {
   useEffect(() => {
     if (data) setValues(data.values);
   }, [data]);
+
+  // Poll the update progress while an update is running. The API restarts as
+  // part of the update, so unreachable polls are expected and treated as
+  // "restarting" rather than a failure. Success is detected when the (now
+  // restarted) API reports the target version as its running version.
+  useEffect(() => {
+    if (!updating) return;
+    let active = true;
+    const poll = async () => {
+      try {
+        const s = await api.get<UpdateProgress>('/api/v1/system/update/status');
+        if (!active) return;
+        setProgress(s);
+        const target = targetVersion.current;
+        if (s.phase === 'error') {
+          setUpdating(false);
+        } else if (target && s.current_version === target) {
+          setUpdating(false);
+          setUpdateDone(true);
+        }
+      } catch {
+        // API is restarting / briefly unreachable — show a "restarting" state.
+        if (!active) return;
+        setProgress((p) => ({
+          ...(p ?? { target_version: targetVersion.current }),
+          phase: 'recreating',
+          message: 'Restarting M-Eyes …',
+        } as UpdateProgress));
+      }
+    };
+    poll();
+    const id = setInterval(poll, 2000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, [updating]);
+
+  const checkUpdates = useMutation({
+    mutationFn: () => api.get<UpdateStatus>('/api/v1/system/update-check?force=true'),
+    onSuccess: (s) => {
+      qc.setQueryData(['update-check'], s);
+      toast(
+        'success',
+        s.update_available
+          ? `Update available: v${s.latest_version}`
+          : `You are on the latest version (v${s.current_version})`,
+      );
+    },
+    onError: (err: Error) => toast('error', err.message),
+  });
+
+  const triggerUpdate = useMutation({
+    mutationFn: () => api.post<UpdateProgress>('/api/v1/system/update'),
+    onSuccess: (s) => {
+      targetVersion.current = s.target_version;
+      setProgress(s);
+      setUpdateDone(false);
+      setUpdating(true);
+      setUpdateConfirm(false);
+    },
+    onError: (err: Error) => {
+      toast('error', err.message);
+      setUpdateConfirm(false);
+    },
+  });
 
   const saveSettings = useMutation({
     mutationFn: () => api.put('/api/v1/system/settings', { values }),
@@ -202,6 +279,14 @@ export default function Settings() {
       Save
     </button>
   );
+
+  const PHASE_LABEL: Record<string, string> = {
+    requested: 'Queued …',
+    pulling: 'Downloading new version …',
+    recreating: 'Restarting services …',
+    done: 'Finishing up …',
+    error: 'Update failed',
+  };
 
   return (
     <>
@@ -486,9 +571,18 @@ export default function Settings() {
           </div>
 
           <div className="f-card p-4">
-            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-              <Server size={16} className="text-info" /> Software Updates
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-sm flex items-center gap-2">
+                <Server size={16} className="text-info" /> Software Updates
+              </h3>
+              <button
+                className="f-btn-secondary"
+                onClick={() => checkUpdates.mutate()}
+                disabled={checkUpdates.isPending || updating}
+              >
+                <RefreshCw size={13} className={checkUpdates.isPending ? 'animate-spin' : ''} /> Check now
+              </button>
+            </div>
             {updateStatus ? (
               <div className="text-table">
                 <div className="mb-1">
@@ -500,17 +594,79 @@ export default function Settings() {
                   <span className="font-mono">{updateStatus.latest_version ? `v${updateStatus.latest_version}` : 'unknown'}</span>
                 </div>
                 {updateStatus.error && <p className="text-warning text-xs mb-2">{updateStatus.error}</p>}
-                {updateStatus.update_available ? (
+
+                {updateDone ? (
+                  <div className="border border-accent rounded p-3 bg-accent/5">
+                    <div className="font-medium text-sm mb-1 flex items-center gap-1.5 text-accent">
+                      <CheckCircle2 size={15} /> Update complete
+                    </div>
+                    <p className="text-xs text-muted mb-2">
+                      M-Eyes is now running v{progress?.current_version ?? targetVersion.current}.
+                      Reload to load the new interface.
+                    </p>
+                    <button className="f-btn-primary" onClick={() => window.location.reload()}>
+                      <RotateCw size={14} /> Reload now
+                    </button>
+                  </div>
+                ) : updating ? (
+                  <div className="border border-info rounded p-3 bg-info/5">
+                    <div className="font-medium text-sm mb-1 flex items-center gap-1.5">
+                      <Loader2 size={15} className="animate-spin text-info" />
+                      {PHASE_LABEL[progress?.phase ?? 'requested'] ?? 'Updating …'}
+                    </div>
+                    <p className="text-xs text-muted mb-2">
+                      Updating to v{targetVersion.current}. The interface is briefly unavailable
+                      while the services restart — this page reconnects automatically. Your data
+                      is preserved; schema migrations run on start.
+                    </p>
+                    {progress?.log_tail && (
+                      <pre className="text-[11px] font-mono bg-slate-900 text-slate-100 p-2 rounded max-h-40 overflow-auto whitespace-pre-wrap">
+                        {progress.log_tail.trim()}
+                      </pre>
+                    )}
+                  </div>
+                ) : progress?.phase === 'error' ? (
+                  <div className="border border-danger rounded p-3 bg-danger/5">
+                    <div className="font-medium text-sm mb-1 flex items-center gap-1.5 text-danger">
+                      <AlertTriangle size={15} /> Update failed
+                    </div>
+                    <p className="text-xs text-muted mb-2">{progress.message || 'The update did not complete.'}</p>
+                    {progress.log_tail && (
+                      <pre className="text-[11px] font-mono bg-slate-900 text-slate-100 p-2 rounded max-h-40 overflow-auto whitespace-pre-wrap mb-2">
+                        {progress.log_tail.trim()}
+                      </pre>
+                    )}
+                    <a href={updateStatus.release_url} target="_blank" rel="noreferrer" className="text-info text-xs hover:underline">
+                      Release notes →
+                    </a>
+                  </div>
+                ) : updateStatus.update_available ? (
                   <div className="border border-warning rounded p-3 bg-warning/5">
                     <div className="font-medium text-sm mb-1">Update available</div>
                     <p className="text-xs text-muted mb-2">
                       Data is preserved across upgrades: the database lives in a persistent volume
                       and schema migrations run automatically on start.
                     </p>
-                    <pre className="text-xs font-mono bg-slate-900 text-slate-100 p-2 rounded mb-2">{'docker compose pull\ndocker compose up -d'}</pre>
-                    <a href={updateStatus.release_url} target="_blank" rel="noreferrer" className="text-info text-xs hover:underline">
-                      Release notes →
-                    </a>
+                    {updateStatus.in_app_update ? (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button className="f-btn-primary" onClick={() => setUpdateConfirm(true)}>
+                          <DownloadCloud size={14} /> Update now & restart
+                        </button>
+                        <a href={updateStatus.release_url} target="_blank" rel="noreferrer" className="text-info text-xs hover:underline">
+                          Release notes →
+                        </a>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-xs text-muted mb-2">
+                          In-app update is unavailable on this deployment. Upgrade on the host:
+                        </p>
+                        <pre className="text-xs font-mono bg-slate-900 text-slate-100 p-2 rounded mb-2">{'docker compose pull\ndocker compose up -d'}</pre>
+                        <a href={updateStatus.release_url} target="_blank" rel="noreferrer" className="text-info text-xs hover:underline">
+                          Release notes →
+                        </a>
+                      </>
+                    )}
                   </div>
                 ) : (
                   !updateStatus.error && (
@@ -541,6 +697,14 @@ export default function Settings() {
         open={deletingKey !== null}
         onCancel={() => setDeletingKey(null)}
         onConfirm={() => deletingKey && deleteKey.mutate(deletingKey)}
+      />
+
+      <ConfirmDialog
+        title="Update & restart M-Eyes"
+        message={`Download v${updateStatus?.latest_version} and restart the M-Eyes services now? The web interface will be briefly unavailable while it restarts. Your configuration is preserved and database migrations run automatically on start.`}
+        open={updateConfirm}
+        onCancel={() => setUpdateConfirm(false)}
+        onConfirm={() => triggerUpdate.mutate()}
       />
     </>
   );

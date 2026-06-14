@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     # Default identity for the auto-generated self-signed bootstrap certificate.
     tls_default_hostname: str = "m-eyes.local"
 
+    # In-app software update — shared volume where the API drops an update
+    # request and the privileged `updater` sidecar reports progress. In-app
+    # update is only offered when this directory is writable (i.e. the sidecar
+    # is wired up, as in the Docker compose stack).
+    update_dir: str = "./out/update"
+
 
     @property
     def cors_origins_list(self) -> list[str]:

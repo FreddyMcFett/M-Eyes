@@ -41,10 +41,13 @@ services:
       MEYES_TLS_DIR: /shared/tls
       MEYES_TLS_DEFAULT_HOSTNAME: ${MEYES_HOSTNAME:-m-eyes.local}
       MEYES_SEED_DEMO: ${MEYES_SEED_DEMO:-false}
+      # Shared with the updater sidecar so updates can be triggered from the UI.
+      MEYES_UPDATE_DIR: /shared/update
     volumes:
       - bind-config:/shared/bind
       - kea-config:/shared/kea
       - tls-config:/shared/tls
+      - update-state:/shared/update
     depends_on:
       postgres:
         condition: service_healthy
@@ -109,9 +112,37 @@ services:
     depends_on:
       - kea
 
+  updater:
+    # Powers in-app updates (System -> Settings -> Backup & Updates -> "Update
+    # now"), so you never have to SSH in to upgrade. When the UI requests an
+    # update this sidecar runs `docker compose pull && up -d` for the M-Eyes
+    # services against the host Docker daemon.
+    #
+    # SECURITY: mounting the Docker socket grants this container root-equivalent
+    # control of the host. It is deliberately a tiny, no-ports sidecar that runs
+    # a single fixed command set and is only ever triggered by the authenticated,
+    # admin-only update API. Delete this service to disable in-app updates — the
+    # UI then falls back to showing the manual `docker compose` upgrade commands.
+    image: docker:27-cli
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/project/deploy/updater/entrypoint.sh"]
+    environment:
+      MEYES_UPDATE_DIR: /shared/update
+      # Services pulled + recreated on update. Keeping it to the app tier means
+      # an update never disrupts running DNS/DHCP (bind9/kea) or the database.
+      MEYES_UPDATE_SERVICES: ${MEYES_UPDATE_SERVICES:-api frontend}
+      MEYES_PROJECT_DIR: /project
+      # Picked up from .env; the UI overrides it per-update with the target tag.
+      MEYES_VERSION: ${MEYES_VERSION:-latest}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/project:ro
+      - update-state:/shared/update
+
 volumes:
   pgdata:
   bind-config:
   kea-config:
   kea-sockets:
   tls-config:
+  update-state:
