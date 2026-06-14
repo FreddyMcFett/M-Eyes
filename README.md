@@ -8,7 +8,7 @@
 single control plane — built for the **Fortinet ecosystem**, with a FortiOS-style web UI,
 automatic configuration versioning and self-generating documentation.
 
-> Think "open Infoblox": M-Eyes models your networks, zones and scopes, generates
+> M-Eyes models your networks, zones and scopes, generates
 > engine-native configuration for **BIND9** and **Kea DHCP**, and publishes your address
 > data as feeds that **FortiGates consume natively** as External Resources.
 
