@@ -265,6 +265,11 @@ export interface UpdateStatus {
   current_version: string;
   latest_version: string | null;
   update_available: boolean;
+  // A newer release is tagged but its container images aren't published to the
+  // registry yet (the post-release build is still running), so it can't be
+  // installed quite yet. Distinct from update_available so the UI doesn't
+  // falsely claim "up to date".
+  pending_images?: boolean;
   release_url: string;
   error: string | null;
   in_app_update?: boolean;

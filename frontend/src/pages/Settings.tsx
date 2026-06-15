@@ -146,13 +146,15 @@ export default function Settings() {
       qc.setQueryData(['update-check'], s);
       if (s.error) {
         toast('error', s.error);
-      } else {
+      } else if (s.update_available) {
+        toast('success', `Update available: v${s.latest_version}`);
+      } else if (s.pending_images) {
         toast(
           'success',
-          s.update_available
-            ? `Update available: v${s.latest_version}`
-            : `You are on the latest version (v${s.current_version})`,
+          `v${s.latest_version} was just released — its container images are still publishing. Try again in a few minutes.`,
         );
+      } else {
+        toast('success', `You are on the latest version (v${s.current_version})`);
       }
     },
     onError: () =>
@@ -790,6 +792,28 @@ export default function Settings() {
                         )}
                       </>
                     )}
+                  </div>
+                ) : updateStatus?.pending_images ? (
+                  <div className="border border-info rounded p-3 bg-info/5">
+                    <div className="font-medium text-sm mb-1 flex items-center gap-1.5">
+                      <Loader2 size={15} className="animate-spin text-info" />
+                      v{updateStatus.latest_version} is publishing
+                    </div>
+                    <p className="text-xs text-muted mb-2">
+                      v{updateStatus.latest_version} was just released, but its container images are
+                      still being built and aren’t available to download yet. This usually takes a
+                      few minutes — check again shortly.
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <button className="f-btn-secondary" onClick={() => checkUpdates.mutate()} disabled={checkUpdates.isPending || updateChecking}>
+                        <RefreshCw size={13} className={checkUpdates.isPending || updateChecking ? 'animate-spin' : ''} /> Check again
+                      </button>
+                      {updateStatus?.release_url && (
+                        <a href={updateStatus.release_url} target="_blank" rel="noreferrer" className="text-info text-xs hover:underline">
+                          Release notes →
+                        </a>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <span className="px-2 py-0.5 rounded bg-accent/15 text-accent text-xs font-medium">Up to date</span>

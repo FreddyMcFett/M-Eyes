@@ -21,6 +21,14 @@ Your data is preserved (the database lives in a persistent volume and schema
 migrations run automatically on start), and DNS/DHCP keep serving throughout —
 only the control plane (API + UI) is restarted, not BIND9/Kea/PostgreSQL.
 
+> **Just-released versions:** the container images are built and pushed a few
+> minutes *after* a new release is tagged. The update check waits for those
+> images before offering the update, so right after a release you may briefly
+> see *"vX.Y.Z is publishing"* instead of an **Update now** button — that's
+> expected; check again in a few minutes. (If an update is triggered during that
+> window anyway, the updater retries the download a few times before reporting
+> the images aren't available yet.)
+
 ### How it works & security
 
 A small `updater` sidecar — the only container with access to the Docker

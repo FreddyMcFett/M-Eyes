@@ -23,6 +23,12 @@ SERVICES="${MEYES_UPDATE_SERVICES:-api frontend}"
 PROJECT_DIR="${MEYES_PROJECT_DIR:-/project}"
 COMPOSE_FILE="${MEYES_COMPOSE_FILE:-$PROJECT_DIR/docker-compose.yml}"
 POLL_SECONDS="${MEYES_UPDATE_POLL_SECONDS:-5}"
+# The release pipeline publishes the GitHub release/tag a few minutes before the
+# multi-arch images finish building and land in GHCR. An update triggered right
+# after a release can therefore race the registry, so retry the pull a few times
+# before giving up rather than failing on a transient "manifest unknown".
+PULL_ATTEMPTS="${MEYES_PULL_ATTEMPTS:-5}"
+PULL_RETRY_SECONDS="${MEYES_PULL_RETRY_SECONDS:-20}"
 
 REQUEST_FILE="$UPDATE_DIR/request.json"
 STATUS_FILE="$UPDATE_DIR/status.json"
@@ -44,6 +50,31 @@ compose() {
   else
     docker-compose --project-directory "$PROJECT_DIR" -f "$COMPOSE_FILE" "$@"
   fi
+}
+
+# Pull the target images, retrying a few times so an update that races the
+# post-release image build (images not in GHCR yet) recovers on its own instead
+# of failing outright. Status is refreshed between attempts so the UI shows
+# progress and the API never treats the in-flight update as stale.
+pull_with_retry() {
+  _attempt=1
+  while : ; do
+    echo "--- docker compose pull $SERVICES (attempt $_attempt/$PULL_ATTEMPTS) ---"
+    # shellcheck disable=SC2086
+    if compose pull $SERVICES; then
+      return 0
+    fi
+    if [ "$_attempt" -ge "$PULL_ATTEMPTS" ]; then
+      return 1
+    fi
+    write_status pulling \
+      "Images for v$TARGET aren't available yet; retrying ($_attempt/$PULL_ATTEMPTS) ..." \
+      "$TARGET" "$REQ_ID" null
+    echo "[updater] pull attempt $_attempt/$PULL_ATTEMPTS failed; retrying in ${PULL_RETRY_SECONDS}s" \
+         "(images for v$TARGET may still be publishing)"
+    _attempt=$((_attempt + 1))
+    sleep "$PULL_RETRY_SECONDS"
+  done
 }
 
 # Extract a JSON string value for a key from a file. Inputs are produced and
@@ -86,9 +117,7 @@ while true; do
         export MEYES_VERSION="$TARGET"
 
         write_status pulling "Downloading v$TARGET ..." "$TARGET" "$REQ_ID" null
-        echo "--- docker compose pull $SERVICES ---"
-        # shellcheck disable=SC2086
-        if compose pull $SERVICES; then
+        if pull_with_retry; then
           write_status recreating "Restarting services ($SERVICES) ..." "$TARGET" "$REQ_ID" null
           echo "--- docker compose up -d $SERVICES ---"
           # This recreates the api + frontend with the new image. This sidecar
@@ -103,8 +132,10 @@ while true; do
             echo "[updater] 'docker compose up' failed"
           fi
         else
-          write_status error "Image download failed; see the update log." "$TARGET" "$REQ_ID" 1
-          echo "[updater] 'docker compose pull' failed"
+          write_status error \
+            "Couldn't download the v$TARGET images. They may still be publishing (the release build runs for a few minutes after a new version appears) — try again shortly. See the update log." \
+            "$TARGET" "$REQ_ID" 1
+          echo "[updater] 'docker compose pull' failed after $PULL_ATTEMPTS attempt(s)"
         fi
         PROCESSED_ID="$REQ_ID"
       } >> "$LOG_FILE" 2>&1

@@ -44,6 +44,7 @@ export default function SystemStatusCard({ status }: { status?: SystemStatus }) 
   const offset = status?.utc_offset ? `UTC${status.utc_offset.replace(/(\d{2})(\d{2})/, '$1:$2')}` : '';
   const latest = upd.status?.latest_version;
   const updateAvailable = upd.status?.update_available;
+  const pendingImages = upd.status?.pending_images;
   const inApp = upd.status?.in_app_update ?? status?.in_app_update;
 
   return (
@@ -136,6 +137,11 @@ export default function SystemStatusCard({ status }: { status?: SystemStatus }) 
             ) : (
               <Link to="/settings" className="text-info text-xs hover:underline">Upgrade from Settings →</Link>
             )}
+          </div>
+        ) : pendingImages ? (
+          <div className="text-xs text-info mt-2 flex items-center gap-1.5">
+            <Loader2 size={13} className="animate-spin" /> v{latest} is publishing — images aren’t
+            ready to download yet. Check again shortly.
           </div>
         ) : upd.status ? (
           <div className="mt-2">
