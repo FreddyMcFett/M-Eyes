@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, FileCode2, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, FileCode2, Plus, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { api } from '../../api/client';
 import { DhcpSubnet } from '../../api/types';
 import ConfirmDialog from '../../components/ConfirmDialog';
@@ -10,9 +10,14 @@ import Modal from '../../components/Modal';
 import SlideOver from '../../components/SlideOver';
 import { useToast } from '../../components/Toast';
 
-type Editor = 'range' | 'reservation' | 'option' | null;
+type Editor = 'range' | 'reservation' | 'option' | 'settings' | null;
 
 const OPTION_NAMES = ['routers', 'domain-name-servers', 'domain-name', 'ntp-servers', 'time-servers'];
+
+const EMPTY_SETTINGS = {
+  valid_lifetime: '', max_valid_lifetime: '', renew_timer: '', rebind_timer: '',
+  next_server: '', boot_file_name: '', client_class: '',
+};
 
 export default function SubnetDetail() {
   const { id } = useParams();
@@ -23,6 +28,7 @@ export default function SubnetDetail() {
   const [rangeForm, setRangeForm] = useState({ start_ip: '', end_ip: '' });
   const [reservationForm, setReservationForm] = useState({ mac: '', ip: '', hostname: '' });
   const [optionForm, setOptionForm] = useState({ name: 'routers', value: '' });
+  const [settingsForm, setSettingsForm] = useState<Record<string, string>>(EMPTY_SETTINGS);
   const [confirm, setConfirm] = useState<{ kind: string; id: number; label: string } | null>(null);
 
   const { data: subnet } = useQuery({
@@ -60,6 +66,34 @@ export default function SubnetDetail() {
     onSuccess: () => onDone('Option set'),
     onError,
   });
+  const saveSettings = useMutation({
+    mutationFn: () => {
+      const numeric = ['valid_lifetime', 'max_valid_lifetime', 'renew_timer', 'rebind_timer'];
+      const body: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(settingsForm)) {
+        const trimmed = value.trim();
+        body[key] = trimmed === '' ? null : numeric.includes(key) ? Number(trimmed) : trimmed;
+      }
+      return api.patch(`/api/v1/dhcp/subnets/${id}`, body);
+    },
+    onSuccess: () => onDone('Settings saved — deploy DHCP to apply'),
+    onError,
+  });
+
+  const openSettings = () => {
+    if (!subnet) return;
+    setSettingsForm({
+      valid_lifetime: subnet.valid_lifetime?.toString() ?? '',
+      max_valid_lifetime: subnet.max_valid_lifetime?.toString() ?? '',
+      renew_timer: subnet.renew_timer?.toString() ?? '',
+      rebind_timer: subnet.rebind_timer?.toString() ?? '',
+      next_server: subnet.next_server ?? '',
+      boot_file_name: subnet.boot_file_name ?? '',
+      client_class: subnet.client_class ?? '',
+    });
+    setEditor('settings');
+  };
+  const sf = (key: string, value: string) => setSettingsForm((f) => ({ ...f, [key]: value }));
   const removeItem = useMutation({
     mutationFn: ({ kind, id: itemId }: { kind: string; id: number }) =>
       api.delete(`/api/v1/dhcp/${kind}/${itemId}`),
@@ -87,8 +121,35 @@ export default function SubnetDetail() {
         </Link>
         <h1 className="text-lg font-semibold font-mono">{subnet?.cidr}</h1>
         <button className="f-btn-secondary ml-auto" onClick={() => setPreviewOpen(true)}>
-          <FileCode2 size={14} /> Preview Kea config
+          <FileCode2 size={14} /> Preview DHCP config
         </button>
+      </div>
+
+      <div className="f-card mb-4">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-line">
+          <h3 className="font-semibold text-table">Advanced Settings</h3>
+          <button className="f-btn-secondary" onClick={openSettings}>
+            <SlidersHorizontal size={13} /> Edit
+          </button>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-table">
+          <div>
+            <div className="text-xs text-muted uppercase">Lease time</div>
+            <div className="font-mono">{subnet?.valid_lifetime ?? 'default'}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted uppercase">Renew / Rebind</div>
+            <div className="font-mono">{subnet?.renew_timer ?? '—'} / {subnet?.rebind_timer ?? '—'}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted uppercase">Boot server / file</div>
+            <div className="font-mono break-all">{subnet?.next_server || '—'} / {subnet?.boot_file_name || '—'}</div>
+          </div>
+          <div>
+            <div className="text-xs text-muted uppercase">Client class</div>
+            <div className="font-mono">{subnet?.client_class || '—'}</div>
+          </div>
+        </div>
       </div>
 
       {section('Address Ranges', () => setEditor('range'), (
@@ -202,6 +263,40 @@ export default function SubnetDetail() {
         </div>
       </SlideOver>
 
+      <SlideOver title="Advanced subnet settings" open={editor === 'settings'} onClose={() => setEditor(null)}>
+        <p className="text-table text-muted mb-3">
+          Override the server defaults for this scope. Lease times are in seconds; leave a field
+          empty to inherit the global default.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <FormField label="Lease time" hint="valid lifetime">
+            <input className="f-input" type="number" min={0} placeholder="default" value={settingsForm.valid_lifetime} onChange={(e) => sf('valid_lifetime', e.target.value)} />
+          </FormField>
+          <FormField label="Max lease time" hint="cap on requested times">
+            <input className="f-input" type="number" min={0} placeholder="auto" value={settingsForm.max_valid_lifetime} onChange={(e) => sf('max_valid_lifetime', e.target.value)} />
+          </FormField>
+          <FormField label="Renew timer (T1)">
+            <input className="f-input" type="number" min={0} placeholder="auto" value={settingsForm.renew_timer} onChange={(e) => sf('renew_timer', e.target.value)} />
+          </FormField>
+          <FormField label="Rebind timer (T2)">
+            <input className="f-input" type="number" min={0} placeholder="auto" value={settingsForm.rebind_timer} onChange={(e) => sf('rebind_timer', e.target.value)} />
+          </FormField>
+        </div>
+        <FormField label="Boot server (next-server)" hint="PXE/TFTP server IP for network boot">
+          <input className="f-input font-mono" placeholder="10.0.0.2" value={settingsForm.next_server} onChange={(e) => sf('next_server', e.target.value)} />
+        </FormField>
+        <FormField label="Boot file name" hint="Network boot file, e.g. pxelinux.0">
+          <input className="f-input font-mono" placeholder="pxelinux.0" value={settingsForm.boot_file_name} onChange={(e) => sf('boot_file_name', e.target.value)} />
+        </FormField>
+        <FormField label="Client class" hint="Only serve this scope to clients in the named class">
+          <input className="f-input font-mono" placeholder="(none)" value={settingsForm.client_class} onChange={(e) => sf('client_class', e.target.value)} />
+        </FormField>
+        <div className="flex justify-end gap-2 mt-4">
+          <button className="f-btn-secondary" onClick={() => setEditor(null)}>Cancel</button>
+          <button className="f-btn-primary" disabled={saveSettings.isPending} onClick={() => saveSettings.mutate()}>Save</button>
+        </div>
+      </SlideOver>
+
       <SlideOver title="Set Option" open={editor === 'option'} onClose={() => setEditor(null)}>
         <FormField label="Option">
           <select className="f-input" value={optionForm.name} onChange={(e) => setOptionForm({ ...optionForm, name: e.target.value })}>
@@ -219,7 +314,7 @@ export default function SubnetDetail() {
         </div>
       </SlideOver>
 
-      <Modal title="Kea DHCPv4 configuration preview" open={previewOpen} onClose={() => setPreviewOpen(false)} wide>
+      <Modal title="DHCP configuration preview" open={previewOpen} onClose={() => setPreviewOpen(false)} wide>
         <pre className="bg-slate-900 text-slate-100 rounded p-3 text-xs overflow-x-auto whitespace-pre">
           {preview?.kea_dhcp4_conf ?? 'Loading…'}
         </pre>

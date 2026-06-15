@@ -182,7 +182,7 @@ export default function Automation() {
                     <input type="checkbox" checked={targets.includes(t)} onChange={(e) => {
                       const next = e.target.checked ? [...new Set([...targets, t])] : targets.filter((x) => x !== t);
                       setConfig('targets', next);
-                    }} /> {t.toUpperCase()}
+                    }} /> {t === 'bind' ? 'DNS' : 'DHCP'}
                   </label>
                 );
               })}

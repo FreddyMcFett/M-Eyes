@@ -50,6 +50,14 @@ class Zone(Base, TimestampMixin):
     role: Mapped[str] = mapped_column(String(16), default="primary", server_default="primary")
     # comma-separated IPs: masters for secondary zones, forwarders for forward zones
     primaries: Mapped[str] = mapped_column(String(512), default="", server_default="")
+    # Access control: comma-separated ACL elements (any|none|localhost|localnets|
+    # CIDR, optionally !negated) / IP lists. Empty = engine default.
+    allow_query: Mapped[str] = mapped_column(String(512), default="", server_default="")
+    allow_transfer: Mapped[str] = mapped_column(String(512), default="", server_default="")
+    allow_update: Mapped[str] = mapped_column(String(512), default="", server_default="")
+    also_notify: Mapped[str] = mapped_column(String(512), default="", server_default="")
+    # Forward zones: try forwarders first, then fall back to normal resolution.
+    forward_first: Mapped[bool] = mapped_column(default=False, server_default="0")
 
     view: Mapped[View | None] = relationship(lazy="joined")
     records: Mapped[list["Record"]] = relationship(back_populates="zone", cascade="all, delete-orphan")

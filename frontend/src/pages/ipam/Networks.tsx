@@ -260,7 +260,7 @@ export default function Networks() {
       >
         <p className="text-table text-muted mb-3">
           Finds the first free CIDR of the requested size inside the container and creates it
-          (Infoblox-style “next available network”).
+          (“next available network”).
         </p>
         <FormField label="Prefix length" hint="e.g. 24 for a /24">
           <input

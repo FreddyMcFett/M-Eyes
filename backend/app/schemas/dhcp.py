@@ -6,10 +6,24 @@ from app.schemas.common import TimestampedOut
 class DhcpSubnetIn(BaseModel):
     network_id: int
     enabled: bool = True
+    valid_lifetime: int | None = None
+    max_valid_lifetime: int | None = None
+    renew_timer: int | None = None
+    rebind_timer: int | None = None
+    next_server: str | None = None
+    boot_file_name: str | None = None
+    client_class: str | None = None
 
 
 class DhcpSubnetUpdate(BaseModel):
     enabled: bool | None = None
+    valid_lifetime: int | None = None
+    max_valid_lifetime: int | None = None
+    renew_timer: int | None = None
+    rebind_timer: int | None = None
+    next_server: str | None = None
+    boot_file_name: str | None = None
+    client_class: str | None = None
 
 
 class DhcpRangeIn(BaseModel):
@@ -51,6 +65,13 @@ class DhcpOptionOut(TimestampedOut):
 class DhcpSubnetOut(TimestampedOut):
     network_id: int
     enabled: bool
+    valid_lifetime: int | None = None
+    max_valid_lifetime: int | None = None
+    renew_timer: int | None = None
+    rebind_timer: int | None = None
+    next_server: str | None = None
+    boot_file_name: str | None = None
+    client_class: str | None = None
     cidr: str = ""
     ranges: list[DhcpRangeOut] = []
     reservations: list[DhcpReservationOut] = []

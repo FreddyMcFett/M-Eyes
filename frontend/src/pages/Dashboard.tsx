@@ -18,15 +18,17 @@ export default function Dashboard() {
   });
   const liveEvents = useEventStream(12);
 
+  const engineLabel = (target: string) => (target === 'bind' ? 'DNS' : 'DHCP');
+
   const deploy = useMutation({
     mutationFn: (target: string) => api.post<{ status: string; detail: string }>(`/api/v1/deploy/${target}`),
     onSuccess: (result, target) => {
       const kind = result.status === 'success' ? 'success' : 'error';
-      toast(kind, `${target.toUpperCase()}: ${result.detail}`);
+      toast(kind, `${engineLabel(target)}: ${result.detail}`);
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['engine-status'] });
     },
-    onError: (err: Error, target) => toast('error', `${target.toUpperCase()} deploy failed: ${err.message}`),
+    onError: (err: Error, target) => toast('error', `${engineLabel(target)} deploy failed: ${err.message}`),
   });
 
   const counts = stats?.counts ?? {};
@@ -64,7 +66,7 @@ export default function Dashboard() {
             return (
               <div key={target} className="flex items-center justify-between py-2 border-b border-line last:border-0">
                 <div>
-                  <div className="font-medium text-table uppercase">{target === 'bind' ? 'BIND9 DNS' : 'Kea DHCP'}</div>
+                  <div className="font-medium text-table uppercase">{target === 'bind' ? 'DNS Engine' : 'DHCP Engine'}</div>
                   <div className="text-xs text-muted">
                     {engine
                       ? `deployed v${engine.config_version} — current v${stats?.config_version}`

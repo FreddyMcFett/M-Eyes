@@ -66,8 +66,8 @@ export default function Views() {
     <>
       <h1 className="text-lg font-semibold mb-3">DNS — Views</h1>
       <p className="text-table text-muted mb-3 max-w-3xl">
-        Split-horizon DNS: BIND matches clients against views in order; zones without a view land in
-        the implicit catch-all <span className="font-mono">default</span> view, evaluated last.
+        Split-horizon DNS: the DNS engine matches clients against views in order; zones without a view
+        land in the implicit catch-all <span className="font-mono">default</span> view, evaluated last.
       </p>
       <DataTable
         columns={[

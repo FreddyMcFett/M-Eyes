@@ -6,9 +6,18 @@
 {{ indent }}    type slave;
 {{ indent }}    masters { {% for ip in z.primaries %}{{ ip }}; {% endfor %}};
 {{ indent }}    file "{{ zone_dir }}/{{ z.filename }}";
+{% if z.allow_query %}
+{{ indent }}    allow-query {{ z.allow_query }};
+{% endif %}
+{% if z.allow_transfer %}
+{{ indent }}    allow-transfer {{ z.allow_transfer }};
+{% endif %}
+{% if z.also_notify %}
+{{ indent }}    also-notify {{ z.also_notify }};
+{% endif %}
 {% elif z.role == 'forward' %}
 {{ indent }}    type forward;
-{{ indent }}    forward only;
+{{ indent }}    forward {{ 'first' if z.forward_first else 'only' }};
 {{ indent }}    forwarders { {% for ip in z.primaries %}{{ ip }}; {% endfor %}};
 {% else %}
 {{ indent }}    type master;
@@ -16,6 +25,18 @@
 {% if z.dnssec %}
 {{ indent }}    dnssec-policy default;
 {{ indent }}    inline-signing yes;
+{% endif %}
+{% if z.allow_query %}
+{{ indent }}    allow-query {{ z.allow_query }};
+{% endif %}
+{% if z.allow_transfer %}
+{{ indent }}    allow-transfer {{ z.allow_transfer }};
+{% endif %}
+{% if z.allow_update %}
+{{ indent }}    allow-update {{ z.allow_update }};
+{% endif %}
+{% if z.also_notify %}
+{{ indent }}    also-notify {{ z.also_notify }};
 {% endif %}
 {% endif %}
 {{ indent }}};

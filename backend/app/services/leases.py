@@ -35,11 +35,11 @@ def list_leases(db: Session) -> dict:
         body = response.json()
         result = body[0] if isinstance(body, list) and body else {}
     except (httpx.HTTPError, json.JSONDecodeError) as exc:
-        return {"reachable": False, "detail": f"Kea Control Agent not reachable "
+        return {"reachable": False, "detail": f"DHCP engine not reachable "
                                               f"({exc.__class__.__name__})", "leases": []}
     if result.get("result") not in (0, 3):  # 0 = ok, 3 = no leases
         return {"reachable": False,
-                "detail": f"Kea rejected the command: {result.get('text', 'unknown error')}",
+                "detail": f"DHCP engine rejected the command: {result.get('text', 'unknown error')}",
                 "leases": []}
 
     leases = []

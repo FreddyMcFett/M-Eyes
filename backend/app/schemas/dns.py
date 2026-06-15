@@ -35,6 +35,12 @@ class ZoneIn(BaseModel):
     default_ttl: int | None = None
     soa_mname: str | None = None
     soa_rname: str | None = None
+    # Advanced DNS options
+    allow_query: str = ""
+    allow_transfer: str = ""
+    allow_update: str = ""
+    also_notify: str = ""
+    forward_first: bool = False
 
 
 class ZoneUpdate(BaseModel):
@@ -49,6 +55,11 @@ class ZoneUpdate(BaseModel):
     retry: int | None = None
     expire: int | None = None
     minimum: int | None = None
+    allow_query: str | None = None
+    allow_transfer: str | None = None
+    allow_update: str | None = None
+    also_notify: str | None = None
+    forward_first: bool | None = None
 
 
 class ZoneOut(TimestampedOut):
@@ -68,6 +79,11 @@ class ZoneOut(TimestampedOut):
     dnssec_enabled: bool
     role: str
     primaries: str
+    allow_query: str
+    allow_transfer: str
+    allow_update: str
+    also_notify: str
+    forward_first: bool
     record_count: int = 0
 
 

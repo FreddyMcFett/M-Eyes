@@ -21,6 +21,13 @@ DEFAULTS: dict[str, str] = {
     "hsts_enabled": "false",        # emit Strict-Transport-Security header
     "hsts_max_age": "31536000",
     "tls_min_version": "TLSv1.2",   # TLSv1.2|TLSv1.3
+    # DHCP service defaults — applied to every scope that does not override them.
+    # Lease lifetimes are in seconds; empty timers are omitted (the engine then
+    # derives sensible defaults from the valid lifetime).
+    "dhcp_valid_lifetime": "4000",  # default lease time
+    "dhcp_max_valid_lifetime": "",  # cap on client-requested lease times
+    "dhcp_renew_timer": "",         # T1 — when clients start renewing
+    "dhcp_rebind_timer": "",        # T2 — when clients start rebinding
 }
 
 

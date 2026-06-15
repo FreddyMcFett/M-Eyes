@@ -28,6 +28,17 @@ def _ip_in_network(ip: str, network: Network) -> None:
         raise HTTPException(status_code=422, detail=f"{ip} is not inside {network.cidr}")
 
 
+_TIMER_FIELDS = ("valid_lifetime", "max_valid_lifetime", "renew_timer", "rebind_timer")
+
+
+def _validate_subnet_data(data: dict) -> None:
+    for field in _TIMER_FIELDS:
+        value = data.get(field)
+        if value is not None and value < 0:
+            raise HTTPException(status_code=422,
+                                detail=f"{field.replace('_', ' ')} must be a positive number of seconds")
+
+
 def create_subnet(db: Session, actor: str, data: dict) -> DhcpSubnet:
     network = db.get(Network, data["network_id"])
     if network is None:
@@ -36,6 +47,7 @@ def create_subnet(db: Session, actor: str, data: dict) -> DhcpSubnet:
         raise HTTPException(status_code=422, detail="DHCP cannot be enabled on a container network")
     if db.scalar(select(DhcpSubnet).where(DhcpSubnet.network_id == network.id)):
         raise HTTPException(status_code=409, detail=f"DHCP already enabled on {network.cidr}")
+    _validate_subnet_data(data)
     subnet = DhcpSubnet(**data)
     db.add(subnet)
     db.flush()
@@ -48,6 +60,7 @@ def create_subnet(db: Session, actor: str, data: dict) -> DhcpSubnet:
 def update_subnet(db: Session, actor: str, subnet: DhcpSubnet, data: dict) -> DhcpSubnet:
     before = audit.snapshot(subnet)
     data.pop("network_id", None)
+    _validate_subnet_data(data)
     for key, value in data.items():
         setattr(subnet, key, value)
     db.flush()

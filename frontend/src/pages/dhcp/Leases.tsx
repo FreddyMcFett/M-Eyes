@@ -16,12 +16,12 @@ export default function Leases() {
     <>
       <h1 className="text-lg font-semibold mb-3">DHCP — Leases</h1>
       <p className="text-table text-muted mb-3 max-w-3xl">
-        Live lease table read from Kea via the Control Agent; refreshes automatically every 15 seconds.
+        Live lease table read from the DHCP engine; refreshes automatically every 15 seconds.
       </p>
       {data && !data.reachable && (
         <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded border border-warning/50 bg-warning/10 text-table">
           <AlertTriangle size={15} className="text-warning shrink-0" />
-          {data.detail} — start the Kea engine (docker compose) to see live leases.
+          {data.detail} — start the DHCP engine to see live leases.
         </div>
       )}
       <DataTable
@@ -36,7 +36,7 @@ export default function Leases() {
         rows={data?.leases ?? []}
         rowKey={(l) => l.ip}
         onRefresh={() => refetch()}
-        emptyText={data?.reachable ? 'No active leases' : 'Kea not reachable'}
+        emptyText={data?.reachable ? 'No active leases' : 'DHCP engine not reachable'}
       />
     </>
   );

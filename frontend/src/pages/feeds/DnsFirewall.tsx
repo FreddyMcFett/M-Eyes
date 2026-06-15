@@ -61,7 +61,7 @@ export default function DnsFirewall() {
   const create = useMutation({
     mutationFn: () => api.post('/api/v1/rpz/rules', form),
     onSuccess: () => {
-      toast('success', 'Rule created — deploy to BIND to activate');
+      toast('success', 'Rule created — deploy DNS to activate');
       setEditorOpen(false);
       invalidate();
     },
@@ -84,10 +84,10 @@ export default function DnsFirewall() {
     onError: (err: Error) => toast('error', err.message),
   });
 
-  const deployBind = useMutation({
+  const deployDns = useMutation({
     mutationFn: () => api.post<{ status: string; detail: string }>('/api/v1/deploy/bind'),
     onSuccess: (result) =>
-      toast(result.status === 'success' ? 'success' : 'error', `BIND: ${result.detail}`),
+      toast(result.status === 'success' ? 'success' : 'error', `DNS: ${result.detail}`),
     onError: (err: Error) => toast('error', err.message),
   });
 
@@ -121,7 +121,7 @@ export default function DnsFirewall() {
     onSuccess: (feed) => {
       toast(
         feed.last_status.startsWith('ok') ? 'success' : 'error',
-        `${feed.name}: ${feed.last_status} — deploy to BIND to activate`,
+        `${feed.name}: ${feed.last_status} — deploy DNS to activate`,
       );
       invalidateFeeds();
     },
@@ -142,8 +142,8 @@ export default function DnsFirewall() {
     <>
       <h1 className="text-lg font-semibold mb-3">Security Fabric — DNS Firewall</h1>
       <p className="text-table text-muted mb-3 max-w-3xl">
-        Domain rules are published to BIND as a Response Policy Zone (RPZ). Every rule covers the
-        domain and all its subdomains; deploy to BIND to activate changes.
+        Domain rules are published as a Response Policy Zone (RPZ). Every rule covers the
+        domain and all its subdomains; deploy DNS to activate changes.
       </p>
       <DataTable
         columns={[
@@ -180,8 +180,8 @@ export default function DnsFirewall() {
             <button className="f-btn-secondary" onClick={() => setPreviewOpen(true)}>
               <FileCode2 size={14} /> Preview RPZ zone
             </button>
-            <button className="f-btn-secondary" disabled={deployBind.isPending} onClick={() => deployBind.mutate()}>
-              <UploadCloud size={14} /> Deploy to BIND
+            <button className="f-btn-secondary" disabled={deployDns.isPending} onClick={() => deployDns.mutate()}>
+              <UploadCloud size={14} /> Deploy DNS
             </button>
           </>
         }
