@@ -70,14 +70,26 @@ def syslog_test(db: Session = Depends(get_db), user: User = Depends(get_current_
 
 
 def _compute_update_status(force: bool = False) -> dict:
-    """Compare the running version against the latest GitHub release (cached 1h)."""
+    """Compare the running version against the latest published release (cached 1h).
+
+    Never raises: any failure to reach the release server (offline / air-gapped
+    appliance, DNS failure, timeout, rate-limit, malformed response) is captured
+    in the ``error`` field so the endpoint always returns 200 with the installed
+    version. A short, bounded timeout keeps the request snappy even when the
+    upstream silently drops packets, so the UI never hangs on "checking…"."""
     now = time.monotonic()
     if force or _update_cache["result"] is None or now - _update_cache["ts"] > _UPDATE_CACHE_TTL:
         result = {"current_version": __version__, "latest_version": None,
                   "update_available": False, "release_url": RELEASES_URL, "error": None}
         try:
-            response = httpx.get(RELEASES_API, timeout=5.0,
-                                 headers={"Accept": "application/vnd.github+json"})
+            # Explicit, tight timeouts (connect/read) so a blocked egress fails
+            # fast instead of tying up the worker — the browser never waits long
+            # enough to surface a "Failed to fetch".
+            response = httpx.get(
+                RELEASES_API,
+                timeout=httpx.Timeout(connect=3.0, read=4.0, write=4.0, pool=4.0),
+                headers={"Accept": "application/vnd.github+json"},
+            )
             response.raise_for_status()
             release = response.json()
             latest = (release.get("tag_name") or "").lstrip("v")
@@ -85,8 +97,11 @@ def _compute_update_status(force: bool = False) -> dict:
             result["release_url"] = release.get("html_url") or RELEASES_URL
             if latest:
                 result["update_available"] = _version_tuple(latest) > _version_tuple(__version__)
-        except (httpx.HTTPError, ValueError) as exc:
-            result["error"] = f"Update check failed: {exc}"[:255]
+        except httpx.HTTPError:
+            result["error"] = ("Could not reach the update server — check this "
+                               "system's outbound network access.")
+        except Exception:  # noqa: BLE001 - update checks must never break the page
+            result["error"] = "Could not determine the latest version."
         _update_cache.update(ts=now, result=result)
     return dict(_update_cache["result"])
 

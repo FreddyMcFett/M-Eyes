@@ -106,11 +106,11 @@ def deploy(db: Session, actor: str, debug: bool = False) -> dict:
         db.add(Deployment(target="bind", status="success",
                           message=f"{len(zones)} zone(s) deployed", config_version=version))
         db.flush()
-        events.emit(db, "info", "deploy", f"BIND deployment succeeded ({len(zones)} zones, v{version})")
+        events.emit(db, "info", "deploy", f"DNS deployment succeeded ({len(zones)} zones, v{version})")
         return {"status": "success", "detail": f"{len(zones)} zone(s) deployed",
                 "config_version": version, **({"debug": raw} if debug else {})}
 
-    message = f"Config written; BIND not reachable ({(out1 + out2).strip()})"
+    message = f"Config written; DNS engine not reachable ({(out1 + out2).strip()})"
     db.add(Deployment(target="bind", status="unreachable", message=message, config_version=version))
     db.flush()
     events.emit(db, "warning", "deploy", message)

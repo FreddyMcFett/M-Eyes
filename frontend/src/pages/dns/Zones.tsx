@@ -16,7 +16,11 @@ export default function Zones() {
   const queryClient = useQueryClient();
   const [editorOpen, setEditorOpen] = useState(false);
   const [deleting, setDeleting] = useState<Zone | null>(null);
-  const [form, setForm] = useState({ name: '', kind: 'forward', network_id: '', view_id: '', dnssec: false, role: 'primary', primaries: '' });
+  const EMPTY_FORM = {
+    name: '', kind: 'forward', network_id: '', view_id: '', dnssec: false, role: 'primary', primaries: '',
+    allow_query: '', allow_transfer: '', allow_update: '', also_notify: '', forward_first: false,
+  };
+  const [form, setForm] = useState(EMPTY_FORM);
 
   const { data: zones = [], refetch } = useQuery({
     queryKey: ['zones'],
@@ -41,6 +45,11 @@ export default function Zones() {
         dnssec_enabled: form.role === 'primary' ? form.dnssec : false,
         role: form.role,
         primaries: form.primaries,
+        allow_query: form.allow_query,
+        allow_transfer: form.allow_transfer,
+        allow_update: form.role === 'primary' ? form.allow_update : '',
+        also_notify: form.also_notify,
+        forward_first: form.role === 'forward' ? form.forward_first : false,
       }),
     onSuccess: () => {
       toast('success', 'Zone created');
@@ -60,10 +69,10 @@ export default function Zones() {
     onError: (err: Error) => toast('error', err.message),
   });
 
-  const deployBind = useMutation({
+  const deployDns = useMutation({
     mutationFn: () => api.post<{ status: string; detail: string }>('/api/v1/deploy/bind'),
     onSuccess: (result) =>
-      toast(result.status === 'success' ? 'success' : 'error', `BIND: ${result.detail}`),
+      toast(result.status === 'success' ? 'success' : 'error', `DNS: ${result.detail}`),
     onError: (err: Error) => toast('error', err.message),
   });
 
@@ -112,14 +121,14 @@ export default function Zones() {
         rows={zones}
         rowKey={(z) => z.id}
         onCreate={() => {
-          setForm({ name: '', kind: 'forward', network_id: '', view_id: '', dnssec: false, role: 'primary', primaries: '' });
+          setForm(EMPTY_FORM);
           setEditorOpen(true);
         }}
         createLabel="Create Zone"
         onRefresh={() => refetch()}
         toolbar={
-          <button className="f-btn-secondary" disabled={deployBind.isPending} onClick={() => deployBind.mutate()}>
-            <UploadCloud size={14} /> Deploy to BIND
+          <button className="f-btn-secondary" disabled={deployDns.isPending} onClick={() => deployDns.mutate()}>
+            <UploadCloud size={14} /> Deploy DNS
           </button>
         }
       />
@@ -186,12 +195,45 @@ export default function Zones() {
           </select>
         </FormField>
         {form.role === 'primary' && (
-          <FormField label="DNSSEC" hint="Sign the zone with BIND's default dnssec-policy">
+          <FormField label="DNSSEC" hint="Sign the zone with the default DNSSEC policy">
             <label className="flex items-center gap-2 text-table">
               <input type="checkbox" checked={form.dnssec} onChange={(e) => setForm({ ...form, dnssec: e.target.checked })} />
               Enable inline signing
             </label>
           </FormField>
+        )}
+        {form.role === 'forward' && (
+          <FormField label="Forwarding mode" hint="Forward-first falls back to normal resolution if the forwarders do not answer">
+            <label className="flex items-center gap-2 text-table">
+              <input type="checkbox" checked={form.forward_first} onChange={(e) => setForm({ ...form, forward_first: e.target.checked })} />
+              Forward first (otherwise forward only)
+            </label>
+          </FormField>
+        )}
+        {form.role !== 'forward' && (
+          <details className="mb-2">
+            <summary className="cursor-pointer text-table text-info select-none">Advanced — access control</summary>
+            <div className="mt-2">
+              <FormField label="Allow query" hint="Who may query this zone (e.g. any, 10.0.0.0/8, localnets). Empty = inherit server default.">
+                <input className="f-input font-mono" placeholder="any" value={form.allow_query}
+                       onChange={(e) => setForm({ ...form, allow_query: e.target.value })} />
+              </FormField>
+              <FormField label="Allow zone transfer" hint="ACL of secondaries allowed to AXFR/IXFR. Empty = none.">
+                <input className="f-input font-mono" placeholder="none" value={form.allow_transfer}
+                       onChange={(e) => setForm({ ...form, allow_transfer: e.target.value })} />
+              </FormField>
+              <FormField label="Also notify" hint="Extra servers to notify on change (comma-separated IPs).">
+                <input className="f-input font-mono" placeholder="192.0.2.53" value={form.also_notify}
+                       onChange={(e) => setForm({ ...form, also_notify: e.target.value })} />
+              </FormField>
+              {form.role === 'primary' && (
+                <FormField label="Allow dynamic update" hint="ACL permitted to send dynamic DNS updates. Empty = none.">
+                  <input className="f-input font-mono" placeholder="none" value={form.allow_update}
+                         onChange={(e) => setForm({ ...form, allow_update: e.target.value })} />
+                </FormField>
+              )}
+            </div>
+          </details>
         )}
         <div className="flex justify-end gap-2 mt-4">
           <button className="f-btn-secondary" onClick={() => setEditorOpen(false)}>

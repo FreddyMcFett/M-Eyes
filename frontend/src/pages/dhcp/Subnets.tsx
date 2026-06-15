@@ -50,10 +50,10 @@ export default function Subnets() {
     onError: (err: Error) => toast('error', err.message),
   });
 
-  const deployKea = useMutation({
+  const deployDhcp = useMutation({
     mutationFn: () => api.post<{ status: string; detail: string }>('/api/v1/deploy/kea'),
     onSuccess: (result) =>
-      toast(result.status === 'success' ? 'success' : 'error', `Kea: ${result.detail}`),
+      toast(result.status === 'success' ? 'success' : 'error', `DHCP: ${result.detail}`),
     onError: (err: Error) => toast('error', err.message),
   });
 
@@ -103,8 +103,8 @@ export default function Subnets() {
         createLabel="Enable DHCP on network"
         onRefresh={() => refetch()}
         toolbar={
-          <button className="f-btn-secondary" disabled={deployKea.isPending} onClick={() => deployKea.mutate()}>
-            <UploadCloud size={14} /> Deploy to Kea
+          <button className="f-btn-secondary" disabled={deployDhcp.isPending} onClick={() => deployDhcp.mutate()}>
+            <UploadCloud size={14} /> Deploy DHCP
           </button>
         }
       />

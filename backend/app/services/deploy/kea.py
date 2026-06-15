@@ -49,16 +49,16 @@ def deploy(db: Session, actor: str, debug: bool = False) -> dict:
                               message=f"{subnet_count} subnet(s) deployed", config_version=version))
             db.flush()
             events.emit(db, "info", "deploy",
-                        f"Kea deployment succeeded ({subnet_count} subnets, v{version})")
+                        f"DHCP deployment succeeded ({subnet_count} subnets, v{version})")
             return {"status": "success", "detail": f"{subnet_count} subnet(s) deployed",
                     "config_version": version, **({"debug": raw} if debug else {})}
-        message = f"Kea rejected the config: {result.get('text', 'unknown error')}"
+        message = f"DHCP engine rejected the config: {result.get('text', 'unknown error')}"
         db.add(Deployment(target="kea", status="failed", message=message, config_version=version))
         db.flush()
         events.emit(db, "error", "deploy", message)
         return {"status": "failed", "detail": message, **({"debug": raw} if debug else {})}
     except (httpx.HTTPError, json.JSONDecodeError, KeyError, IndexError) as exc:
-        message = f"Config written; Kea Control Agent not reachable ({exc.__class__.__name__})"
+        message = f"Config written; DHCP engine not reachable ({exc.__class__.__name__})"
         db.add(Deployment(target="kea", status="unreachable", message=message, config_version=version))
         db.flush()
         events.emit(db, "warning", "deploy", message)

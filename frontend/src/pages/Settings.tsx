@@ -8,6 +8,7 @@ import {
   Copy,
   DatabaseBackup,
   DownloadCloud,
+  Globe,
   KeyRound,
   Loader2,
   Lock,
@@ -30,10 +31,11 @@ interface SettingsValues {
   values: Record<string, string>;
 }
 
-type Tab = 'system' | 'https' | 'logging' | 'security' | 'maintenance';
+type Tab = 'system' | 'services' | 'https' | 'logging' | 'security' | 'maintenance';
 
 const TABS: { id: Tab; label: string; icon: JSX.Element }[] = [
   { id: 'system', label: 'System', icon: <SlidersHorizontal size={14} /> },
+  { id: 'services', label: 'DNS & DHCP', icon: <Server size={14} /> },
   { id: 'https', label: 'HTTPS / TLS', icon: <Lock size={14} /> },
   { id: 'logging', label: 'Logging & Debug', icon: <Radio size={14} /> },
   { id: 'security', label: 'Security', icon: <KeyRound size={14} /> },
@@ -71,11 +73,25 @@ export default function Settings() {
     queryFn: () => api.get<ApiKey[]>('/api/v1/apikeys'),
     enabled: tab === 'security',
   });
-  const { data: updateStatus } = useQuery({
+  const {
+    data: updateStatus,
+    isError: updateCheckFailed,
+    isFetching: updateChecking,
+    refetch: refetchUpdate,
+  } = useQuery({
     queryKey: ['update-check'],
     queryFn: () => api.get<UpdateStatus>('/api/v1/system/update-check'),
     enabled: tab === 'maintenance',
+    retry: 1,
   });
+  // A always-reachable source for the installed version, so the panel can still
+  // show "you are on vX" even if the update-server lookup cannot complete.
+  const { data: systemInfo } = useQuery({
+    queryKey: ['system-info'],
+    queryFn: () => api.get<{ version: string }>('/api/v1/system/info'),
+    enabled: tab === 'maintenance',
+  });
+  const installedVersion = updateStatus?.current_version ?? systemInfo?.version ?? null;
 
   useEffect(() => {
     if (data) setValues(data.values);
@@ -122,14 +138,19 @@ export default function Settings() {
     mutationFn: () => api.get<UpdateStatus>('/api/v1/system/update-check?force=true'),
     onSuccess: (s) => {
       qc.setQueryData(['update-check'], s);
-      toast(
-        'success',
-        s.update_available
-          ? `Update available: v${s.latest_version}`
-          : `You are on the latest version (v${s.current_version})`,
-      );
+      if (s.error) {
+        toast('error', s.error);
+      } else {
+        toast(
+          'success',
+          s.update_available
+            ? `Update available: v${s.latest_version}`
+            : `You are on the latest version (v${s.current_version})`,
+        );
+      }
     },
-    onError: (err: Error) => toast('error', err.message),
+    onError: () =>
+      toast('error', 'Could not reach the update server — check this system’s network access.'),
   });
 
   const triggerUpdate = useMutation({
@@ -165,11 +186,13 @@ export default function Settings() {
   const pingEngine = useMutation({
     mutationFn: (target: string) =>
       api.get<{ reachable: boolean; latency_ms?: number; detail: string }>(`/api/v1/deploy/ping/${target}`),
-    onSuccess: (result, target) =>
+    onSuccess: (result, target) => {
+      const label = target === 'bind' ? 'DNS engine' : 'DHCP engine';
       toast(
         result.reachable ? 'success' : 'error',
-        `${target.toUpperCase()}: ${result.reachable ? `reachable (${result.latency_ms ?? '?'} ms)` : `unreachable — ${result.detail}`}`,
-      ),
+        `${label}: ${result.reachable ? `reachable (${result.latency_ms ?? '?'} ms)` : `unreachable — ${result.detail}`}`,
+      );
+    },
   });
 
   const changePassword = useMutation({
@@ -325,7 +348,7 @@ export default function Settings() {
             <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
               <Bug size={16} className="text-warning" /> Debug & Diagnostics
             </h3>
-            <FormField label="Debug mode" hint="Includes raw rndc / Kea Control Agent output in deploy responses">
+            <FormField label="Debug mode" hint="Includes raw DNS/DHCP control-channel output in deploy responses">
               <label className="flex items-center gap-2 text-table">{boolToggle('debug_mode')} Enabled</label>
             </FormField>
             <FormField label="Application log level">
@@ -337,10 +360,65 @@ export default function Settings() {
             </FormField>
             <div className="flex gap-2 flex-wrap">
               <SaveBtn />
-              <button className="f-btn-secondary" onClick={() => pingEngine.mutate('bind')}><Activity size={14} /> Test BIND</button>
-              <button className="f-btn-secondary" onClick={() => pingEngine.mutate('kea')}><Activity size={14} /> Test Kea</button>
+              <button className="f-btn-secondary" onClick={() => pingEngine.mutate('bind')}><Activity size={14} /> Test DNS</button>
+              <button className="f-btn-secondary" onClick={() => pingEngine.mutate('kea')}><Activity size={14} /> Test DHCP</button>
               <button className="f-btn-secondary" onClick={downloadDiagnostics}>Download diagnostics</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'services' && (
+        <div className="grid lg:grid-cols-2 gap-4 items-start">
+          <div className="f-card p-4">
+            <h3 className="font-semibold text-sm mb-1 flex items-center gap-2">
+              <Server size={16} className="text-accent" /> DHCP Lease Defaults
+            </h3>
+            <p className="text-table text-muted mb-3">
+              Server-wide lease timing applied to every scope. Individual scopes can override
+              these from their detail page. Times are in seconds; leave a timer empty to let the
+              service derive it from the lease time.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Default lease time" hint="valid lifetime — how long a lease is held">
+                <input className="f-input" type="number" min={60} value={values.dhcp_valid_lifetime ?? '4000'}
+                       onChange={(e) => set('dhcp_valid_lifetime', e.target.value)} placeholder="4000" />
+              </FormField>
+              <FormField label="Maximum lease time" hint="cap on client-requested lease times (optional)">
+                <input className="f-input" type="number" min={0} value={values.dhcp_max_valid_lifetime ?? ''}
+                       onChange={(e) => set('dhcp_max_valid_lifetime', e.target.value)} placeholder="auto" />
+              </FormField>
+              <FormField label="Renew timer (T1)" hint="when clients begin renewing (optional)">
+                <input className="f-input" type="number" min={0} value={values.dhcp_renew_timer ?? ''}
+                       onChange={(e) => set('dhcp_renew_timer', e.target.value)} placeholder="auto" />
+              </FormField>
+              <FormField label="Rebind timer (T2)" hint="when clients begin rebinding (optional)">
+                <input className="f-input" type="number" min={0} value={values.dhcp_rebind_timer ?? ''}
+                       onChange={(e) => set('dhcp_rebind_timer', e.target.value)} placeholder="auto" />
+              </FormField>
+            </div>
+            <div className="mt-1 flex items-center gap-2">
+              <SaveBtn />
+              <span className="text-xs text-muted">Deploy DHCP afterwards to apply the change.</span>
+            </div>
+          </div>
+
+          <div className="f-card p-4">
+            <h3 className="font-semibold text-sm mb-1 flex items-center gap-2">
+              <Globe size={16} className="text-info" /> DNS Server Behaviour
+            </h3>
+            <p className="text-table text-muted mb-2">
+              Advanced DNS controls are configured per zone, where they belong:
+            </p>
+            <ul className="text-table text-muted list-disc pl-5 space-y-1">
+              <li><strong>Access control</strong> — allow-query, allow-transfer and dynamic-update ACLs.</li>
+              <li><strong>Notifications</strong> — also-notify targets for secondary servers.</li>
+              <li><strong>Forwarding</strong> — forward-first vs forward-only on forward zones.</li>
+              <li><strong>SOA &amp; TTLs</strong> — refresh / retry / expire / minimum and DNSSEC signing.</li>
+            </ul>
+            <p className="text-table text-muted mt-2">
+              Open any zone under <strong>DNS → Zones</strong> and choose <strong>Edit zone</strong> to set these.
+            </p>
           </div>
         </div>
       )}
@@ -583,17 +661,18 @@ export default function Settings() {
                 <RefreshCw size={13} className={checkUpdates.isPending ? 'animate-spin' : ''} /> Check now
               </button>
             </div>
-            {updateStatus ? (
+            {installedVersion === null && updateChecking ? (
+              <p className="text-table text-muted">Checking for updates…</p>
+            ) : (
               <div className="text-table">
                 <div className="mb-1">
                   <span className="text-muted">Installed:</span>{' '}
-                  <span className="font-mono">v{updateStatus.current_version}</span>
+                  <span className="font-mono">v{installedVersion ?? '…'}</span>
                 </div>
                 <div className="mb-2">
                   <span className="text-muted">Latest release:</span>{' '}
-                  <span className="font-mono">{updateStatus.latest_version ? `v${updateStatus.latest_version}` : 'unknown'}</span>
+                  <span className="font-mono">{updateStatus?.latest_version ? `v${updateStatus.latest_version}` : 'unknown'}</span>
                 </div>
-                {updateStatus.error && <p className="text-warning text-xs mb-2">{updateStatus.error}</p>}
 
                 {updateDone ? (
                   <div className="border border-accent rounded p-3 bg-accent/5">
@@ -636,25 +715,51 @@ export default function Settings() {
                         {progress.log_tail.trim()}
                       </pre>
                     )}
-                    <a href={updateStatus.release_url} target="_blank" rel="noreferrer" className="text-info text-xs hover:underline">
-                      Release notes →
-                    </a>
+                    {updateStatus?.release_url && (
+                      <a href={updateStatus.release_url} target="_blank" rel="noreferrer" className="text-info text-xs hover:underline">
+                        Release notes →
+                      </a>
+                    )}
                   </div>
-                ) : updateStatus.update_available ? (
+                ) : updateCheckFailed || updateStatus?.error ? (
+                  <div className="border border-warning rounded p-3 bg-warning/5">
+                    <div className="font-medium text-sm mb-1 flex items-center gap-1.5 text-warning">
+                      <AlertTriangle size={15} /> Couldn’t check for updates
+                    </div>
+                    <p className="text-xs text-muted mb-2">
+                      {updateStatus?.error ??
+                        'Could not reach the update server — check this system’s network access.'}{' '}
+                      You can still upgrade manually on the host:
+                    </p>
+                    <pre className="text-xs font-mono bg-slate-900 text-slate-100 p-2 rounded mb-2">{'docker compose pull\ndocker compose up -d'}</pre>
+                    <div className="flex items-center gap-3">
+                      <button className="f-btn-secondary" onClick={() => refetchUpdate()} disabled={updateChecking}>
+                        <RefreshCw size={13} className={updateChecking ? 'animate-spin' : ''} /> Retry check
+                      </button>
+                      {updateStatus?.release_url && (
+                        <a href={updateStatus.release_url} target="_blank" rel="noreferrer" className="text-info text-xs hover:underline">
+                          Release notes →
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ) : updateStatus?.update_available ? (
                   <div className="border border-warning rounded p-3 bg-warning/5">
                     <div className="font-medium text-sm mb-1">Update available</div>
                     <p className="text-xs text-muted mb-2">
                       Data is preserved across upgrades: the database lives in a persistent volume
                       and schema migrations run automatically on start.
                     </p>
-                    {updateStatus.in_app_update ? (
+                    {updateStatus?.in_app_update ? (
                       <div className="flex items-center gap-2 flex-wrap">
                         <button className="f-btn-primary" onClick={() => setUpdateConfirm(true)}>
                           <DownloadCloud size={14} /> Update now & restart
                         </button>
-                        <a href={updateStatus.release_url} target="_blank" rel="noreferrer" className="text-info text-xs hover:underline">
-                          Release notes →
-                        </a>
+                        {updateStatus?.release_url && (
+                          <a href={updateStatus.release_url} target="_blank" rel="noreferrer" className="text-info text-xs hover:underline">
+                            Release notes →
+                          </a>
+                        )}
                       </div>
                     ) : (
                       <>
@@ -662,20 +767,18 @@ export default function Settings() {
                           In-app update is unavailable on this deployment. Upgrade on the host:
                         </p>
                         <pre className="text-xs font-mono bg-slate-900 text-slate-100 p-2 rounded mb-2">{'docker compose pull\ndocker compose up -d'}</pre>
-                        <a href={updateStatus.release_url} target="_blank" rel="noreferrer" className="text-info text-xs hover:underline">
-                          Release notes →
-                        </a>
+                        {updateStatus?.release_url && (
+                          <a href={updateStatus.release_url} target="_blank" rel="noreferrer" className="text-info text-xs hover:underline">
+                            Release notes →
+                          </a>
+                        )}
                       </>
                     )}
                   </div>
                 ) : (
-                  !updateStatus.error && (
-                    <span className="px-2 py-0.5 rounded bg-accent/15 text-accent text-xs font-medium">Up to date</span>
-                  )
+                  <span className="px-2 py-0.5 rounded bg-accent/15 text-accent text-xs font-medium">Up to date</span>
                 )}
               </div>
-            ) : (
-              <p className="text-table text-muted">Checking for updates…</p>
             )}
           </div>
         </div>

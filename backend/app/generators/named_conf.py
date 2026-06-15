@@ -23,6 +23,14 @@ def rpz_active(db: Session) -> bool:
     ) is not None
 
 
+def _acl_clause(value: str | None) -> str | None:
+    """Render a comma/semicolon-separated ACL into a BIND address-match list
+    (``{ a; b; }``). Returns ``None`` when nothing is configured so the engine
+    default applies and no empty clause is emitted."""
+    tokens = [t.strip() for t in (value or "").replace(";", ",").split(",") if t.strip()]
+    return "{ " + " ".join(f"{token};" for token in tokens) + " }" if tokens else None
+
+
 def _zone_entry(zone: Zone) -> dict:
     return {
         "name": zone.name,
@@ -30,6 +38,11 @@ def _zone_entry(zone: Zone) -> dict:
         "dnssec": zone.dnssec_enabled,
         "role": zone.role,
         "primaries": [ip for ip in zone.primaries.split(",") if ip],
+        "allow_query": _acl_clause(getattr(zone, "allow_query", "")),
+        "allow_transfer": _acl_clause(getattr(zone, "allow_transfer", "")),
+        "allow_update": _acl_clause(getattr(zone, "allow_update", "")),
+        "also_notify": _acl_clause(getattr(zone, "also_notify", "")),
+        "forward_first": getattr(zone, "forward_first", False),
     }
 
 
@@ -60,7 +73,9 @@ def render_zones_conf(db: Session) -> str:
     rpz = None
     if rpz_active(db):
         rpz = {"name": settings.rpz_zone_name, "filename": f"db.{settings.rpz_zone_name}",
-               "dnssec": False, "role": "primary", "primaries": []}
+               "dnssec": False, "role": "primary", "primaries": [],
+               "allow_query": None, "allow_transfer": None, "allow_update": None,
+               "also_notify": None, "forward_first": False}
 
     template = jinja_env.get_template("zones.conf.j2")
     return template.render(

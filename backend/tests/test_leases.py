@@ -52,5 +52,5 @@ def test_leases_unreachable_is_graceful(client, auth_headers, monkeypatch):
     response = client.get("/api/v1/dhcp/leases", headers=auth_headers)
     assert response.status_code == 200
     assert response.json() == {"reachable": False,
-                               "detail": "Kea Control Agent not reachable (ConnectError)",
+                               "detail": "DHCP engine not reachable (ConnectError)",
                                "leases": []}

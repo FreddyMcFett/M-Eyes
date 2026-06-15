@@ -64,6 +64,11 @@ export interface Zone {
   dnssec_enabled: boolean;
   role: string;
   primaries: string;
+  allow_query: string;
+  allow_transfer: string;
+  allow_update: string;
+  also_notify: string;
+  forward_first: boolean;
   record_count: number;
 }
 
@@ -104,6 +109,13 @@ export interface DhcpSubnet {
   id: number;
   network_id: number;
   enabled: boolean;
+  valid_lifetime: number | null;
+  max_valid_lifetime: number | null;
+  renew_timer: number | null;
+  rebind_timer: number | null;
+  next_server: string | null;
+  boot_file_name: string | null;
+  client_class: string | null;
   cidr: string;
   ranges: DhcpRange[];
   reservations: DhcpReservation[];

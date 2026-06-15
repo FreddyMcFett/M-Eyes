@@ -53,7 +53,7 @@ const SECTIONS: Section[] = [
         title: 'Dashboard',
         icon: <LayoutDashboard size={16} />,
         route: '/',
-        what: 'The landing page summarising the whole platform: object counts (networks, IPs, zones, records, DHCP scopes, feeds), top network utilisation, BIND/Kea engine status, a live event feed and the most recent configuration changes.',
+        what: 'The landing page summarising the whole platform: object counts (networks, IPs, zones, records, DHCP scopes, feeds), top network utilisation, DNS/DHCP engine status, a live event feed and the most recent configuration changes.',
         useCases: [
           'Get an at-a-glance health check of DNS/DHCP/IPAM in one screen.',
           'Spot configuration drift — see when an engine is behind the current config version.',
@@ -62,7 +62,7 @@ const SECTIONS: Section[] = [
         configure: [
           'No configuration required — it reads live data from the API.',
           'Click any stat card (e.g. "Networks") to open the matching page (IPAM, DNS, DHCP, Feeds).',
-          'Use the Deploy buttons in the Engines panel to push pending config to BIND9 or Kea.',
+          'Use the Deploy buttons in the Engines panel to push pending config to the DNS or DHCP engine.',
         ],
         tips: ['Counts and engine status auto-refresh every 5 seconds; live events stream over Server-Sent Events.'],
       },
@@ -70,7 +70,7 @@ const SECTIONS: Section[] = [
         id: 'search',
         title: 'Global Search',
         icon: <Search size={16} />,
-        what: 'The "Search everything…" box in the top bar performs an Infoblox-style search across every object family — networks, IP addresses, zones, records, hosts and DNS-firewall rules — and links straight to the matching detail page.',
+        what: 'The "Search everything…" box in the top bar performs a unified search across every object family — networks, IP addresses, zones, records, hosts and DNS-firewall rules — and links straight to the matching detail page.',
         useCases: [
           'Find an IP, hostname or subnet without remembering which page it lives on.',
           'Jump to a DNS record or zone by name during an incident.',
@@ -109,17 +109,19 @@ const SECTIONS: Section[] = [
         title: 'DNS (Zones & Records)',
         icon: <Globe size={16} />,
         route: '/dns',
-        what: 'Authoritative forward and reverse zones with all common record types, automatic PTR management, SOA serial handling, optional DNSSEC, and deployment to BIND9.',
+        what: 'Authoritative forward and reverse zones with all common record types, automatic PTR management, SOA serial handling, per-zone access control (allow-query / transfer / update, also-notify), optional DNSSEC, and deployment to the DNS engine.',
         useCases: [
           'Host internal forward zones (corp.example.com) and reverse zones for PTR.',
           'Keep A and PTR records in sync automatically when you create hosts.',
-          'Sign a zone with DNSSEC using BIND-managed keys.',
+          'Sign a zone with DNSSEC using engine-managed keys.',
+          'Lock a zone down with allow-query / allow-transfer ACLs and notify external secondaries.',
         ],
         configure: [
           'Open DNS → New Zone. Choose forward or reverse; for reverse, link the IPAM network.',
           'Open a zone to add records (A, AAAA, CNAME, MX, TXT, NS, SRV, PTR …).',
-          'Toggle DNSSEC on the zone to add dnssec-policy default; pull the DS record for your registrar.',
-          'Deploy from the Dashboard or via an auto-deploy automation rule to push to BIND9.',
+          'Use "Edit zone" to set SOA timers, DNSSEC and access-control ACLs.',
+          'Toggle DNSSEC on the zone to sign it with the default policy; pull the DS record for your registrar.',
+          'Deploy from the Dashboard or via an auto-deploy automation rule to push to the DNS engine.',
         ],
       },
       {
@@ -144,17 +146,20 @@ const SECTIONS: Section[] = [
         title: 'DHCP (Scopes)',
         icon: <Server size={16} />,
         route: '/dhcp',
-        what: 'DHCP scopes mapped 1:1 to IPAM networks, with address ranges, MAC reservations (mirrored into IPAM), and DHCP options, deployed to Kea DHCPv4.',
+        what: 'DHCP scopes mapped 1:1 to IPAM networks, with address ranges, MAC reservations (mirrored into IPAM), DHCP options, per-scope lease timing, network-boot (PXE) and client-class settings, deployed to the DHCP engine.',
         useCases: [
           'Hand out addresses on a client subnet from a defined range.',
           'Pin a printer or server to a fixed IP by MAC reservation.',
           'Push gateway, DNS and domain-name options to clients.',
+          'Tune lease times per scope and serve PXE boot to network-booting clients.',
         ],
         configure: [
           'Open DHCP → create a scope on an existing IPAM network.',
           'Add one or more ranges (start/end IP) inside the subnet.',
           'Set options (routers, domain-name-servers, domain-name) at scope or global level.',
-          'Add reservations by MAC → IP; they appear in IPAM too. Deploy to Kea.',
+          'Use "Advanced Settings" on a scope for lease timers, boot server/file and client class.',
+          'Set server-wide lease defaults under System → Settings → DNS & DHCP.',
+          'Add reservations by MAC → IP; they appear in IPAM too. Deploy DHCP.',
         ],
       },
       {
@@ -162,14 +167,14 @@ const SECTIONS: Section[] = [
         title: 'Leases',
         icon: <ListChecks size={16} />,
         route: '/leases',
-        what: 'A live view of the Kea lease table read through the Kea Control Agent (lease4-get-all), with Kea subnet ids mapped back to IPAM networks.',
+        what: 'A live view of the DHCP lease table read from the DHCP engine, with engine subnet ids mapped back to IPAM networks.',
         useCases: [
           'See which devices currently hold a DHCP lease and on which subnet.',
           'Troubleshoot address exhaustion or unexpected clients.',
         ],
         configure: [
-          'No configuration — the page reads live data. Requires the Kea Control Agent to be reachable.',
-          'If the Control Agent is down the page degrades gracefully instead of erroring.',
+          'No configuration — the page reads live data. Requires the DHCP engine to be reachable.',
+          'If the engine is down the page degrades gracefully instead of erroring.',
         ],
       },
       {
@@ -177,7 +182,7 @@ const SECTIONS: Section[] = [
         title: 'Hosts',
         icon: <Activity size={16} />,
         route: '/hosts',
-        what: 'Infoblox-style composite objects: a single create call allocates the IP, writes the A and PTR records, and optionally a DHCP reservation — keeping IPAM and DNS consistent in one step.',
+        what: 'Composite objects: a single create call allocates the IP, writes the A and PTR records, and optionally a DHCP reservation — keeping IPAM and DNS consistent in one step.',
         useCases: [
           'Onboard a new server with IP + DNS + DHCP in one action.',
           'Avoid forgetting the PTR record or leaving stale IPAM entries.',
@@ -249,7 +254,7 @@ const SECTIONS: Section[] = [
         title: 'DNS Firewall (RPZ)',
         icon: <ShieldOff size={16} />,
         route: '/dnsfw',
-        what: 'Response Policy Zone rules that act on DNS answers BIND returns to clients. Each rule covers a domain and its subdomains and supports block (NXDOMAIN), nodata, passthru (whitelist) and substitute (walled-garden redirect).',
+        what: 'Response Policy Zone rules that act on the DNS answers returned to clients. Each rule covers a domain and its subdomains and supports block (NXDOMAIN), nodata, passthru (whitelist) and substitute (walled-garden redirect).',
         useCases: [
           'Block malware/phishing domains at the resolver.',
           'Redirect a tracker domain to a walled-garden page (substitute).',
@@ -258,9 +263,9 @@ const SECTIONS: Section[] = [
         configure: [
           'Open DNS Firewall → New Rule. Enter the FQDN and pick the action.',
           'For substitute, provide the replacement A/AAAA/CNAME target.',
-          'Deploy BIND — while any rule is enabled, the rpz.m-eyes zone and response-policy are published.',
+          'Deploy DNS — while any rule is enabled, the RPZ zone and response-policy are published.',
         ],
-        tips: ['Point your clients at BIND for the firewall to take effect — RPZ acts on resolver responses.'],
+        tips: ['Point your clients at the DNS engine for the firewall to take effect — RPZ acts on resolver responses.'],
       },
     ],
   },
@@ -360,7 +365,7 @@ const SECTIONS: Section[] = [
         title: 'Extensible Attributes',
         icon: <Tags size={16} />,
         route: '/extattrs',
-        what: 'Infoblox-style typed metadata. Admins define attributes (string, integer, email, URL, date or enum) that can be attached to networks, IPs, zones, records and hosts and are validated against the definition.',
+        what: 'Typed metadata. Admins define attributes (string, integer, email, URL, date or enum) that can be attached to networks, IPs, zones, records and hosts and are validated against the definition.',
         useCases: [
           'Record Owner, Environment (prod/staging/dev) or Location on any object.',
           'Drive reporting and filtering with consistent, validated metadata.',
@@ -407,8 +412,9 @@ const SECTIONS: Section[] = [
         route: '/settings',
         what: 'Platform-wide configuration: engine endpoints, advanced logging (syslog forwarding), and other operational defaults.',
         useCases: [
-          'Point M-Eyes at your BIND/Kea control endpoints.',
+          'Point M-Eyes at your DNS/DHCP control endpoints.',
           'Enable syslog forwarding to a SIEM or FortiAnalyzer.',
+          'Set server-wide DHCP lease defaults under the DNS & DHCP tab.',
         ],
         configure: [
           'Open Settings, adjust the relevant section and save.',
@@ -417,16 +423,16 @@ const SECTIONS: Section[] = [
       },
       {
         id: 'deploy',
-        title: 'Deployment (BIND & Kea)',
+        title: 'Deployment (DNS & DHCP)',
         icon: <UploadCloud size={16} />,
-        what: 'M-Eyes is the management plane: it renders engine-native config (BIND zone files, Kea JSON) and reloads the engines over their native control channels (rndc, Kea Control Agent). When engines are down it keeps working in management-only mode and reports unreachable.',
+        what: 'M-Eyes is the management plane: it renders engine-native config (DNS zone files, DHCP JSON) and reloads the engines over their native control channels. When engines are down it keeps working in management-only mode and reports unreachable.',
         useCases: [
           'Push pending DNS/DHCP changes to the live engines safely.',
           'Operate management-only when engines are offline; deploy later.',
         ],
         configure: [
           'Use the Deploy buttons on the Dashboard Engines panel, or an auto-deploy automation rule.',
-          'Deploys run validation (e.g. named-checkzone) before reloading the engine.',
+          'Deploys run validation before reloading the engine.',
         ],
       },
     ],

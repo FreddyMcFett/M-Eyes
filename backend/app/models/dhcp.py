@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, String, UniqueConstraint
+from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -10,6 +10,16 @@ class DhcpSubnet(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(primary_key=True)
     network_id: Mapped[int] = mapped_column(ForeignKey("networks.id", ondelete="CASCADE"), unique=True)
     enabled: Mapped[bool] = mapped_column(default=True)
+
+    # Advanced lease timing (seconds). NULL means "inherit the global default".
+    valid_lifetime: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    max_valid_lifetime: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    renew_timer: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rebind_timer: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # PXE / network boot and client classification (NULL/"" = not set).
+    next_server: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    boot_file_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    client_class: Mapped[str | None] = mapped_column(String(128), nullable=True)
 
     network = relationship("Network", lazy="joined")
     ranges: Mapped[list["DhcpRange"]] = relationship(back_populates="subnet", cascade="all, delete-orphan")
