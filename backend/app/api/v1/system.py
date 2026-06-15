@@ -1,5 +1,8 @@
+import platform
+import socket
 import time
 from datetime import UTC, datetime
+from zoneinfo import ZoneInfo, available_timezones
 
 import httpx
 from fastapi import APIRouter, Body, Depends, HTTPException
@@ -11,7 +14,7 @@ from app.config import get_settings
 from app.database import get_db
 from app.models import Deployment, Event, Network, Record, User, Zone
 from app.schemas.system import SettingsIn, SettingsOut, UpdateTrigger
-from app.services import app_settings, audit, backup, certs, events, updater
+from app.services import app_settings, audit, backup, certs, events, system_metrics, updater
 from app.version import __version__
 
 router = APIRouter(prefix="/system", tags=["system"])
@@ -30,9 +33,62 @@ def _version_tuple(version: str) -> tuple[int, ...]:
         return (0,)
 
 
+def _valid_timezone(name: str) -> bool:
+    try:
+        ZoneInfo(name)
+        return True
+    except (KeyError, ValueError, OSError):
+        return False
+
+
+def _resolve_timezone(db: Session) -> tuple[str, ZoneInfo]:
+    """The configured IANA zone, falling back to UTC if unset or invalid."""
+    name = app_settings.get(db, "timezone") or "UTC"
+    try:
+        return name, ZoneInfo(name)
+    except (KeyError, ValueError, OSError):
+        return "UTC", ZoneInfo("UTC")
+
+
 @router.get("/info")
 def info(db: Session = Depends(get_db)):
     return {"name": "M-Eyes", "version": __version__, "config_version": audit.current_version(db)}
+
+
+@router.get("/timezones")
+def timezones(user: User = Depends(get_current_user)):
+    """Sorted list of IANA time-zone names for the settings picker."""
+    return {"timezones": sorted(available_timezones())}
+
+
+@router.get("/status")
+def system_status(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Live operational snapshot for the dashboards: version, time, host and
+    resource usage. Deliberately does no network I/O so it can be polled often;
+    the software-update check lives on its own (cached) endpoint."""
+    tz_name, tz = _resolve_timezone(db)
+    now = datetime.now(tz)
+
+    def last_deploy(target: str):
+        row = db.scalar(select(Deployment).where(Deployment.target == target)
+                        .order_by(Deployment.id.desc()).limit(1))
+        return {"status": row.status, "ts": row.ts.isoformat(), "message": row.message,
+                "config_version": row.config_version} if row else None
+
+    return {
+        "name": "M-Eyes",
+        "version": __version__,
+        "config_version": audit.current_version(db),
+        "timezone": tz_name,
+        "server_time": now.isoformat(),
+        "utc_offset": now.strftime("%z"),
+        "hostname": socket.gethostname(),
+        "platform": platform.platform(),
+        "python_version": platform.python_version(),
+        "in_app_update": updater.is_supported(),
+        "resources": system_metrics.snapshot(),
+        "engines": {"bind": last_deploy("bind"), "kea": last_deploy("kea")},
+    }
 
 
 @router.get("/settings", response_model=SettingsOut)
@@ -43,6 +99,9 @@ def get_app_settings(db: Session = Depends(get_db), user: User = Depends(get_cur
 @router.put("/settings", response_model=SettingsOut)
 def update_app_settings(payload: SettingsIn, db: Session = Depends(get_db),
                         user: User = Depends(get_current_user)):
+    tz = payload.values.get("timezone")
+    if tz and not _valid_timezone(tz):
+        raise HTTPException(status_code=422, detail=f"Unknown time zone: {tz!r}")
     values = app_settings.set_many(db, payload.values)
     events.reset_syslog()
     # Republish TLS/proxy snippets when an HTTPS-affecting setting changed.

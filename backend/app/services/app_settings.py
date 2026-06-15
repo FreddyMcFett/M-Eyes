@@ -16,6 +16,7 @@ DEFAULTS: dict[str, str] = {
     # System identity
     "system_hostname": "",          # FQDN clients use to reach M-Eyes (default CSR/cert CN)
     "organization_name": "M-Eyes",  # used as default O in generated CSRs
+    "timezone": "UTC",              # IANA name used to render times across the UI
     # HTTPS / TLS (applied by the TLS-terminating proxy on save)
     "https_redirect": "true",       # 301 redirect plain HTTP to HTTPS
     "hsts_enabled": "false",        # emit Strict-Transport-Security header

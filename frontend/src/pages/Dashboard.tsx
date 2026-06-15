@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Activity, Globe, List, Rss, Server, UploadCloud } from 'lucide-react';
 import { api } from '../api/client';
-import { DashboardStats } from '../api/types';
+import { DashboardStats, SystemStatus } from '../api/types';
 import Donut from '../components/Donut';
+import ResourceMonitor from '../components/ResourceMonitor';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
+import SystemStatusCard from '../components/SystemStatusCard';
 import { useToast } from '../components/Toast';
 import { useEventStream } from '../hooks/useEventStream';
 
@@ -15,6 +17,11 @@ export default function Dashboard() {
     queryKey: ['dashboard'],
     queryFn: () => api.get<DashboardStats>('/api/v1/dashboard/stats'),
     refetchInterval: 5000,
+  });
+  const { data: systemStatus } = useQuery({
+    queryKey: ['system-status'],
+    queryFn: () => api.get<SystemStatus>('/api/v1/system/status'),
+    refetchInterval: 3000,
   });
   const liveEvents = useEventStream(12);
 
@@ -42,6 +49,12 @@ export default function Dashboard() {
         <StatCard label="Records" value={counts.records ?? '…'} icon={<Globe size={22} />} to="/dns" />
         <StatCard label="DHCP Scopes" value={counts.dhcp_subnets ?? '…'} icon={<Server size={22} />} to="/dhcp" />
         <StatCard label="Feeds" value={counts.feeds ?? '…'} icon={<Rss size={22} />} to="/feeds" />
+      </div>
+
+      {/* System status + resource monitor */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+        <SystemStatusCard status={systemStatus} />
+        <ResourceMonitor resources={systemStatus?.resources} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
