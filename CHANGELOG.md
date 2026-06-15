@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+# [1.7.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.6.1...v1.7.0) (2026-06-15)
+
+
+### Features
+
+* **dns,dhcp:** advanced zone/scope config, resilient update check, generic engine names ([f28f93d](https://github.com/FreddyMcFett/M-Eyes/commit/f28f93d6bfc55619eb5ab546c6355e2218a5f03b))
+
 ## [1.6.1](https://github.com/FreddyMcFett/M-Eyes/compare/v1.6.0...v1.6.1) (2026-06-15)
 
 
