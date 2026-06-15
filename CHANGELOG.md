@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+# [1.8.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.7.0...v1.8.0) (2026-06-15)
+
+
+### Features
+
+* **dashboard:** add Command Center, system status & resource monitor ([98c6f33](https://github.com/FreddyMcFett/M-Eyes/commit/98c6f333fb9759382a4c62a89771450b69768575))
+
 # [1.7.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.6.1...v1.7.0) (2026-06-15)
 
 
