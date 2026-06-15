@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+## [1.6.1](https://github.com/FreddyMcFett/M-Eyes/compare/v1.6.0...v1.6.1) (2026-06-15)
+
+
+### Bug Fixes
+
+* **ci:** publish GHCR images on every release ([d918d9e](https://github.com/FreddyMcFett/M-Eyes/commit/d918d9e9d9d9f0fe616dd19db52220cb50943ee1))
+
 # [1.6.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.5.0...v1.6.0) (2026-06-14)
 
 
