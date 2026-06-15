@@ -1,55 +1,68 @@
 /* ============================================================================
-   Command Center — a self-contained, dark "futuristic" surface that lives on
-   top of the otherwise light FortiOS theme. Everything is scoped under .cc-*
-   so it never leaks into the rest of the app.
+   Command Center — a self-contained, dark "Cortex-style" SOC surface that lives
+   on top of the otherwise light FortiOS theme. Everything is scoped under
+   .cc-* so it never leaks into the rest of the app.
+
+   The look: deep-space navy canvas, drifting aurora glows, a faint animated
+   HUD grid, glassy panels framed with corner brackets, neon data-viz and a
+   rotating radar posture ring. Heavy on motion — but all of it collapses to a
+   static board under `prefers-reduced-motion`.
    ========================================================================== */
 
 .cc-root {
   --cc-cyan: #22d3ee;
+  --cc-teal: #2dd4bf;
   --cc-green: #4ade80;
   --cc-violet: #a78bfa;
+  --cc-pink: #f472b6;
   --cc-amber: #fbbf24;
   --cc-red: #f87171;
-  --cc-bg: #060b18;
-  --cc-panel: rgba(17, 27, 46, 0.72);
-  --cc-line: rgba(56, 189, 248, 0.18);
-  --cc-text: #cde3ff;
+  --cc-bg: #05070f;
+  --cc-panel: rgba(13, 21, 40, 0.62);
+  --cc-panel-2: rgba(8, 14, 28, 0.55);
+  --cc-line: rgba(56, 189, 248, 0.16);
+  --cc-line-soft: rgba(56, 189, 248, 0.09);
+  --cc-text: #cfe6ff;
   --cc-muted: #6f8bb5;
 
   position: relative;
   color: var(--cc-text);
   background:
-    radial-gradient(1200px 600px at 12% -10%, rgba(34, 211, 238, 0.16), transparent 60%),
-    radial-gradient(1000px 500px at 100% 0%, rgba(167, 139, 250, 0.14), transparent 55%),
-    linear-gradient(180deg, #050912 0%, #070d1c 100%);
-  border-radius: 12px;
+    radial-gradient(900px 520px at 8% -8%, rgba(34, 211, 238, 0.14), transparent 60%),
+    radial-gradient(820px 480px at 100% 0%, rgba(167, 139, 250, 0.13), transparent 55%),
+    radial-gradient(700px 520px at 50% 120%, rgba(45, 212, 191, 0.10), transparent 60%),
+    linear-gradient(180deg, #04060d 0%, #060b18 55%, #04070f 100%);
+  border-radius: 14px;
   overflow: hidden;
   isolation: isolate;
+  min-height: calc(100vh - 92px);
 }
 
-/* Faint animated grid + sweeping scanline behind the content. */
+/* Faint animated HUD grid + drifting aurora behind the content. */
 .cc-root::before {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: -2px;
   background-image:
-    linear-gradient(rgba(56, 189, 248, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(56, 189, 248, 0.07) 1px, transparent 1px);
-  background-size: 34px 34px;
-  mask-image: radial-gradient(circle at 50% 30%, black, transparent 85%);
-  animation: cc-grid 22s linear infinite;
+    linear-gradient(rgba(56, 189, 248, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.06) 1px, transparent 1px);
+  background-size: 38px 38px;
+  mask-image: radial-gradient(circle at 50% 25%, black, transparent 88%);
+  -webkit-mask-image: radial-gradient(circle at 50% 25%, black, transparent 88%);
+  animation: cc-grid 26s linear infinite;
   z-index: 0;
   pointer-events: none;
 }
+/* Sweeping horizontal scan beam. */
 .cc-root::after {
   content: '';
   position: absolute;
   left: 0;
   right: 0;
   top: 0;
-  height: 160px;
-  background: linear-gradient(180deg, rgba(34, 211, 238, 0.12), transparent);
-  animation: cc-scan 7s ease-in-out infinite;
+  height: 200px;
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.10), transparent);
+  animation: cc-scan 9s ease-in-out infinite;
   z-index: 0;
   pointer-events: none;
 }
@@ -60,115 +73,279 @@
 
 @keyframes cc-grid {
   from { background-position: 0 0, 0 0; }
-  to { background-position: 34px 34px, 34px 34px; }
+  to { background-position: 38px 38px, 38px 38px; }
 }
 @keyframes cc-scan {
-  0% { transform: translateY(-160px); opacity: 0; }
-  40% { opacity: 1; }
-  100% { transform: translateY(640px); opacity: 0; }
+  0% { transform: translateY(-220px); opacity: 0; }
+  45% { opacity: 1; }
+  100% { transform: translateY(120vh); opacity: 0; }
 }
 
+/* Panels ----------------------------------------------------------------- */
 .cc-panel {
-  background: var(--cc-panel);
+  position: relative;
+  background:
+    linear-gradient(180deg, var(--cc-panel), var(--cc-panel-2));
   border: 1px solid var(--cc-line);
-  border-radius: 10px;
-  backdrop-filter: blur(6px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 30px rgba(0, 0, 0, 0.35);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 0 40px rgba(8, 47, 73, 0.18),
+    0 14px 40px rgba(0, 0, 0, 0.42);
 }
+/* Thin animated accent line across the top edge of a panel. */
+.cc-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cc-cyan), var(--cc-violet), transparent);
+  background-size: 200% 100%;
+  opacity: 0.55;
+  animation: cc-edge 6s linear infinite;
+  border-radius: 12px 12px 0 0;
+}
+@keyframes cc-edge {
+  to { background-position: 200% 0; }
+}
+
+/* HUD corner brackets (rendered as four absolutely-positioned spans). */
+.cc-corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid rgba(34, 211, 238, 0.55);
+  pointer-events: none;
+  z-index: 2;
+}
+.cc-corner--tl { top: 6px; left: 6px; border-right: 0; border-bottom: 0; }
+.cc-corner--tr { top: 6px; right: 6px; border-left: 0; border-bottom: 0; }
+.cc-corner--bl { bottom: 6px; left: 6px; border-right: 0; border-top: 0; }
+.cc-corner--br { bottom: 6px; right: 6px; border-left: 0; border-top: 0; }
 
 .cc-panel-title {
   font-size: 11px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--cc-muted);
   display: flex;
   align-items: center;
   gap: 8px;
 }
+.cc-panel-title .cc-tt {
+  color: var(--cc-text);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+}
 
 .cc-glow {
-  text-shadow: 0 0 12px currentColor, 0 0 28px rgba(34, 211, 238, 0.35);
+  text-shadow: 0 0 12px currentColor, 0 0 30px rgba(34, 211, 238, 0.3);
 }
 
 /* Big hero title with an animated cyan→violet gradient. */
 .cc-title {
   font-weight: 800;
-  letter-spacing: 0.06em;
-  background: linear-gradient(90deg, #22d3ee, #a78bfa, #4ade80, #22d3ee);
+  letter-spacing: 0.08em;
+  background: linear-gradient(90deg, #22d3ee, #a78bfa, #2dd4bf, #22d3ee);
   background-size: 300% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: cc-hue 8s linear infinite;
+  animation: cc-hue 9s linear infinite;
 }
 @keyframes cc-hue {
   to { background-position: 300% 0; }
 }
 
-/* Stat tiles ------------------------------------------------------------- */
+/* Faint flicker on the kicker line for a "live signal" feel. */
+.cc-kicker { animation: cc-flicker 5s ease-in-out infinite; }
+@keyframes cc-flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  94% { opacity: 0.45; }
+  96% { opacity: 1; }
+}
+
+/* HUD stat tiles --------------------------------------------------------- */
 .cc-stat {
   position: relative;
-  background: linear-gradient(160deg, rgba(34, 211, 238, 0.10), rgba(17, 27, 46, 0.55));
+  background: linear-gradient(160deg, rgba(34, 211, 238, 0.10), rgba(13, 21, 40, 0.55));
   border: 1px solid var(--cc-line);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 14px;
   overflow: hidden;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 .cc-stat:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   border-color: rgba(34, 211, 238, 0.55);
-  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.25), 0 12px 30px rgba(8, 47, 73, 0.55);
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.22), 0 16px 34px rgba(8, 47, 73, 0.5);
 }
+/* Corner glow + a thin moving underline that "charges" the tile. */
 .cc-stat::after {
   content: '';
   position: absolute;
-  right: -30px;
-  top: -30px;
-  width: 90px;
-  height: 90px;
-  background: radial-gradient(circle, rgba(34, 211, 238, 0.25), transparent 70%);
+  right: -28px;
+  top: -28px;
+  width: 92px;
+  height: 92px;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.22), transparent 70%);
   pointer-events: none;
+}
+.cc-stat-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, currentColor, transparent);
+  background-size: 200% 100%;
+  opacity: 0.7;
+  animation: cc-edge 3.5s linear infinite;
 }
 .cc-stat-value {
   font-variant-numeric: tabular-nums;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1;
 }
 
-/* Live event ticker ------------------------------------------------------ */
-.cc-feed {
-  font-family: 'JetBrains Mono', 'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace;
-  font-size: 11.5px;
+/* Radial posture ring ---------------------------------------------------- */
+.cc-ring {
+  --cc-pct: 0;
+  --cc-ring: var(--cc-cyan);
+  position: relative;
+  display: grid;
+  place-items: center;
 }
-.cc-feed-row {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-  padding: 3px 0;
-  border-bottom: 1px dashed rgba(56, 189, 248, 0.10);
-  animation: cc-fade-in 0.4s ease both;
+.cc-ring__track {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from -90deg,
+    var(--cc-ring) calc(var(--cc-pct) * 1%),
+    rgba(56, 189, 248, 0.09) 0
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 15px), #000 calc(100% - 14px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 15px), #000 calc(100% - 14px));
+  filter: drop-shadow(0 0 10px var(--cc-ring));
+  /* The fill percentage is stepped per-frame from JS, so no CSS transition. */
+  transition: filter 0.4s ease;
 }
-@keyframes cc-fade-in {
-  from { opacity: 0; transform: translateX(-6px); }
-  to { opacity: 1; transform: translateX(0); }
+/* Outer dashed tick ring. */
+.cc-ring__ticks {
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from -90deg,
+    rgba(56, 189, 248, 0.30) 0 0.6deg,
+    transparent 0.6deg 6deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px) calc(100% - 1px), transparent 100%);
+          mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px) calc(100% - 1px), transparent 100%);
+  animation: cc-spin 60s linear infinite;
+}
+/* Rotating radar sweep over the disc. */
+.cc-ring__radar {
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0 76%,
+    rgba(34, 211, 238, 0.04) 80%,
+    rgba(34, 211, 238, 0.42) 96%,
+    transparent 100%
+  );
+  -webkit-mask: radial-gradient(farthest-side, #000 60%, transparent 100%);
+          mask: radial-gradient(farthest-side, #000 60%, transparent 100%);
+  animation: cc-spin 4.5s linear infinite;
+}
+.cc-ring__core {
+  position: relative;
+  text-align: center;
+  z-index: 1;
+}
+@keyframes cc-spin {
+  to { transform: rotate(360deg); }
 }
 
-.cc-dot {
-  width: 8px;
+/* Threat-activity timeline (stacked bar histogram) ----------------------- */
+.cc-bars {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 168px;
+  padding-top: 6px;
+  background-image: repeating-linear-gradient(
+    to top,
+    rgba(56, 189, 248, 0.07) 0,
+    rgba(56, 189, 248, 0.07) 1px,
+    transparent 1px,
+    transparent 33.33px
+  );
+}
+/* A faint "live" scan line drifting across the chart. */
+.cc-bars::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, rgba(34, 211, 238, 0.5), transparent);
+  animation: cc-sweepx 6s linear infinite;
+  pointer-events: none;
+}
+@keyframes cc-sweepx {
+  from { left: -2%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  to { left: 102%; opacity: 0; }
+}
+.cc-bar {
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column-reverse;
+  min-width: 0;
+  height: 100%;
+  border-radius: 2px;
+  transition: background 0.2s ease;
+}
+.cc-bar:hover { background: rgba(34, 211, 238, 0.06); }
+.cc-bar__seg {
+  width: 100%;
+  border-radius: 2px 2px 0 0;
+  transition: height 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 0 8px currentColor;
+}
+/* Empty bucket gets a faint baseline tick so the axis stays readable. */
+.cc-bar__idle {
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(56, 189, 248, 0.18);
+}
+
+/* Horizontal triage meters ---------------------------------------------- */
+.cc-meter {
   height: 8px;
   border-radius: 999px;
-  box-shadow: 0 0 10px currentColor;
+  background: rgba(56, 189, 248, 0.10);
+  overflow: hidden;
 }
-.cc-pulse {
-  animation: cc-pulse 1.6s ease-in-out infinite;
-}
-@keyframes cc-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.7); }
+.cc-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  box-shadow: 0 0 12px currentColor;
+  transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Thin neon track used for utilisation / resource bars. */
+/* Thin neon track used for feed / utilisation bars. */
 .cc-track {
   height: 6px;
   border-radius: 999px;
@@ -179,7 +356,96 @@
   display: block;
   height: 100%;
   border-radius: 999px;
-  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Data-source "bus" (vertical animated spine with node taps) ------------- */
+.cc-bus { position: relative; }
+.cc-bus::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, var(--cc-cyan), var(--cc-teal), transparent);
+  background-size: 100% 220%;
+  animation: cc-flow 3.4s linear infinite;
+  border-radius: 2px;
+}
+@keyframes cc-flow {
+  from { background-position: 0 0; }
+  to { background-position: 0 -220%; }
+}
+.cc-node {
+  position: relative;
+  padding-left: 26px;
+}
+.cc-node::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  width: 12px;
+  height: 2px;
+  transform: translateY(-50%);
+  background: var(--cc-line);
+}
+
+/* Live threat stream ----------------------------------------------------- */
+.cc-feed {
+  font-family: 'JetBrains Mono', 'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+}
+.cc-feed-row {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 3px 0;
+  border-bottom: 1px dashed rgba(56, 189, 248, 0.10);
+  animation: cc-fade-in 0.45s ease both;
+}
+@keyframes cc-fade-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.cc-tag {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid currentColor;
+  opacity: 0.85;
+}
+
+/* Status dots ------------------------------------------------------------ */
+.cc-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  box-shadow: 0 0 10px currentColor;
+}
+.cc-pulse { animation: cc-pulse 1.7s ease-in-out infinite; }
+@keyframes cc-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.65); }
+}
+/* Expanding ring used behind a live status dot. */
+.cc-ping {
+  position: relative;
+}
+.cc-ping::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  animation: cc-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes cc-ping {
+  0% { transform: scale(0.6); opacity: 0.8; }
+  100% { transform: scale(1.8); opacity: 0; }
 }
 
 .cc-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -189,6 +455,14 @@
 @media (prefers-reduced-motion: reduce) {
   .cc-root::before,
   .cc-root::after,
+  .cc-panel::before,
+  .cc-stat-bar,
   .cc-title,
+  .cc-kicker,
+  .cc-ring__ticks,
+  .cc-ring__radar,
+  .cc-bars::after,
+  .cc-bus::before,
+  .cc-ping::after,
   .cc-pulse { animation: none !important; }
 }
