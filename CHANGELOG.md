@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+# [1.9.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.8.1...v1.9.0) (2026-06-15)
+
+
+### Features
+
+* **command-center:** Cortex-style threat-defense SOC console ([709a635](https://github.com/FreddyMcFett/M-Eyes/commit/709a6358d0625028e918faa8d70df2fa9c90bf1c))
+
 ## [1.8.1](https://github.com/FreddyMcFett/M-Eyes/compare/v1.8.0...v1.8.1) (2026-06-15)
 
 
