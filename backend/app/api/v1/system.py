@@ -21,6 +21,25 @@ router = APIRouter(prefix="/system", tags=["system"])
 
 RELEASES_API = "https://api.github.com/repos/FreddyMcFett/M-Eyes/releases/latest"
 RELEASES_URL = "https://github.com/FreddyMcFett/M-Eyes/releases"
+
+# The release pipeline tags the GitHub release a few minutes *before* the
+# multi-arch container images finish building and land in GHCR. Advertising the
+# new version in that window is what makes the in-app updater run
+# `docker compose pull` against images that don't exist yet and fail. So before
+# offering an update we confirm the candidate tag's images are actually
+# pullable. These names/registry must match the image refs in docker-compose.yml.
+GHCR_REGISTRY = "ghcr.io"
+GHCR_OWNER = "freddymcfett"
+RELEASE_IMAGES = ("m-eyes-api", "m-eyes-frontend")
+# Manifest media types we accept (multi-arch index + single image, OCI + Docker).
+_GHCR_MANIFEST_ACCEPT = (
+    "application/vnd.oci.image.index.v1+json,"
+    "application/vnd.oci.image.manifest.v1+json,"
+    "application/vnd.docker.distribution.manifest.list.v2+json,"
+    "application/vnd.docker.distribution.manifest.v2+json"
+)
+_GHCR_TIMEOUT = httpx.Timeout(connect=3.0, read=4.0, write=4.0, pool=4.0)
+
 _UPDATE_CACHE_TTL = 3600.0
 _update_cache: dict = {"ts": 0.0, "result": None}
 
@@ -31,6 +50,54 @@ def _version_tuple(version: str) -> tuple[int, ...]:
         return tuple(int(p) for p in parts)
     except ValueError:
         return (0,)
+
+
+def _image_published(client: httpx.Client, image: str, tag: str) -> bool | None:
+    """Whether ``ghcr.io/<owner>/<image>:<tag>`` is pullable.
+
+    GHCR hands out a short-lived anonymous pull token for public images; a
+    manifest ``HEAD`` then says whether the tag exists. Returns ``True`` when
+    present, ``False`` on a clean ``404`` (tag not pushed yet) and ``None`` when
+    it can't be determined (network error, auth hiccup, unexpected status) so a
+    flaky registry never hides a real update."""
+    repo = f"{GHCR_OWNER}/{image}"
+    try:
+        token_resp = client.get(
+            f"https://{GHCR_REGISTRY}/token",
+            params={"scope": f"repository:{repo}:pull", "service": GHCR_REGISTRY},
+        )
+        token_resp.raise_for_status()
+        token = token_resp.json().get("token")
+        if not token:
+            return None
+        manifest = client.head(
+            f"https://{GHCR_REGISTRY}/v2/{repo}/manifests/{tag}",
+            headers={"Authorization": f"Bearer {token}", "Accept": _GHCR_MANIFEST_ACCEPT},
+        )
+    except httpx.HTTPError:
+        return None
+    if manifest.status_code == 200:
+        return True
+    if manifest.status_code == 404:
+        return False
+    return None
+
+
+def _images_published(tag: str) -> bool | None:
+    """Whether *all* release images for ``tag`` are pullable from GHCR.
+
+    ``True`` only when every image is confirmed present, ``False`` as soon as
+    one is confirmed missing, and ``None`` when at least one is indeterminate
+    and none are confirmed missing (the caller then trusts the GitHub release)."""
+    indeterminate = False
+    with httpx.Client(timeout=_GHCR_TIMEOUT, follow_redirects=True) as client:
+        for image in RELEASE_IMAGES:
+            state = _image_published(client, image, tag)
+            if state is False:
+                return False
+            if state is None:
+                indeterminate = True
+    return None if indeterminate else True
 
 
 def _valid_timezone(name: str) -> bool:
@@ -139,7 +206,8 @@ def _compute_update_status(force: bool = False) -> dict:
     now = time.monotonic()
     if force or _update_cache["result"] is None or now - _update_cache["ts"] > _UPDATE_CACHE_TTL:
         result = {"current_version": __version__, "latest_version": None,
-                  "update_available": False, "release_url": RELEASES_URL, "error": None}
+                  "update_available": False, "pending_images": False,
+                  "release_url": RELEASES_URL, "error": None}
         try:
             # Explicit, tight timeouts (connect/read) so a blocked egress fails
             # fast instead of tying up the worker — the browser never waits long
@@ -154,8 +222,15 @@ def _compute_update_status(force: bool = False) -> dict:
             latest = (release.get("tag_name") or "").lstrip("v")
             result["latest_version"] = latest or None
             result["release_url"] = release.get("html_url") or RELEASES_URL
-            if latest:
-                result["update_available"] = _version_tuple(latest) > _version_tuple(__version__)
+            if latest and _version_tuple(latest) > _version_tuple(__version__):
+                # A newer release is tagged — but only offer it once its images
+                # are actually pullable, so the in-app updater never races the
+                # post-release multi-arch build. A confirmed-missing manifest
+                # means "published, still building"; anything else goes ahead.
+                if _images_published(latest) is False:
+                    result["pending_images"] = True
+                else:
+                    result["update_available"] = True
         except httpx.HTTPError:
             result["error"] = ("Could not reach the update server — check this "
                                "system's outbound network access.")
