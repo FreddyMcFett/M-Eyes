@@ -12,6 +12,10 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    outputs:
+      # Set by semantic-release (via the exec plugin) only when a new version is
+      # actually published; empty otherwise so the publish job is skipped.
+      version: ${{ steps.semantic.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,6 +27,21 @@ jobs:
       - name: Install release tooling
         run: npm ci
       - name: Semantic release
+        id: semantic
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
+
+  # Publish the GHCR images for the release we just cut. Done here (rather than
+  # from a tag-push trigger) because a tag pushed by GITHUB_TOKEN does not start
+  # other workflows, which is why earlier releases never published images.
+  publish-images:
+    needs: release
+    if: ${{ needs.release.outputs.version != '' }}
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/docker-publish.yml
+    with:
+      version: ${{ needs.release.outputs.version }}
+    secrets: inherit

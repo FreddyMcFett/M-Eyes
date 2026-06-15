@@ -1,12 +1,32 @@
 name: Publish Docker images
 
-# semantic-release pushes a vX.Y.Z tag for every release on main;
-# this publishes matching versioned images so installs can upgrade with
+# Builds and pushes the M-Eyes app images to GHCR so installs can upgrade with
 # `docker compose pull && docker compose up -d` instead of rebuilding.
+#
+# Triggers:
+#   * workflow_call  - invoked by the Release workflow right after a new release
+#     is published (the reliable path: a tag pushed by the default GITHUB_TOKEN
+#     does NOT trigger other workflows, so we publish from inside Release).
+#   * workflow_dispatch - manual (re)build of any released version, e.g. to
+#     backfill images for a tag that predates this wiring. Pass `version` like
+#     `1.6.0`.
+#   * push tags v*   - safety net for tags pushed by a PAT or via the UI (those
+#     DO trigger workflows, unlike GITHUB_TOKEN tag pushes).
 on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Release version to build, e.g. 1.6.0"
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version to build, e.g. 1.6.0"
+        required: true
+        type: string
   push:
     tags: ["v*"]
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -23,7 +43,24 @@ jobs:
           - image: m-eyes-frontend
             dockerfile: deploy/frontend/Dockerfile
     steps:
+      - name: Resolve version
+        id: v
+        run: |
+          raw="${{ inputs.version }}"
+          [ -n "$raw" ] || raw="${{ github.ref_name }}"
+          ver="${raw#v}"
+          if [ -z "$ver" ]; then
+            echo "::error::could not resolve a version to build"
+            exit 1
+          fi
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          echo "major_minor=${ver%.*}" >> "$GITHUB_OUTPUT"
+          echo "ref=v$ver" >> "$GITHUB_OUTPUT"
+      # Build from the released tag so the image matches that release's source,
+      # even when invoked from the Release workflow running on `main`.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.v.outputs.ref }}
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - name: Log in to GHCR
@@ -36,10 +73,11 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
+          # metadata-action lowercases the image name for us (GHCR requires it).
           images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=${{ steps.v.outputs.version }}
+            type=raw,value=${{ steps.v.outputs.major_minor }}
             type=raw,value=latest
       - name: Build and push
         uses: docker/build-push-action@v6
