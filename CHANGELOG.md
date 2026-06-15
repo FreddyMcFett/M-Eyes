@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+## [1.8.1](https://github.com/FreddyMcFett/M-Eyes/compare/v1.8.0...v1.8.1) (2026-06-15)
+
+
+### Bug Fixes
+
+* **update:** don't offer an update until its images are published ([d1af301](https://github.com/FreddyMcFett/M-Eyes/commit/d1af301798855b6a760762dc6522dc5eba3b8eaa))
+
 # [1.8.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.7.0...v1.8.0) (2026-06-15)
 
 
