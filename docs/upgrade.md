@@ -63,6 +63,31 @@ MEYES_VERSION=1.3.0
 then bump the value and `docker compose pull && docker compose up -d` when
 you decide to move.
 
+### `docker compose pull` fails with `error from registry: denied`
+
+A `denied` error on `ghcr.io/freddymcfett/m-eyes-api` or
+`ghcr.io/freddymcfett/m-eyes-frontend` (while the third-party images pull
+fine) means the registry will not serve those images to you. Two causes:
+
+1. **The images aren't published yet.** Releases publish them automatically;
+   if a release predates that automation, build them once from the
+   **Actions → Publish Docker images → Run workflow** button (enter the
+   version, e.g. `1.6.0`).
+2. **The GHCR packages are private.** New GHCR packages default to private, so
+   an unauthenticated pull is denied. For public distribution, set each
+   package to public once: **GitHub → your profile/org → Packages →
+   `m-eyes-api` / `m-eyes-frontend` → Package settings → Change visibility →
+   Public**. To keep them private instead, authenticate on the host first:
+
+   ```bash
+   echo "$GHCR_PAT" | docker login ghcr.io -u <github-user> --password-stdin
+   ```
+
+   using a token with `read:packages`.
+
+If you can't pull right now, you can always upgrade from source instead (see
+below) — it needs no registry access.
+
 ### Source installs
 
 If you built from a git checkout instead of pulling images:
