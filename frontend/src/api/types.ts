@@ -187,6 +187,39 @@ export interface EngineStatus {
   kea: { last_status: string | null; last_message: string | null; deployed_version: number | null };
 }
 
+export interface ResourceMetric {
+  total: number;
+  used: number;
+  available?: number;
+  free?: number;
+  percent: number;
+}
+
+export interface SystemResources {
+  cpu_percent: number | null;
+  cpu_count: number;
+  load_average: number[] | null;
+  memory: ResourceMetric | null;
+  disk: ResourceMetric | null;
+  host_uptime_seconds: number | null;
+  process_uptime_seconds: number | null;
+}
+
+export interface SystemStatus {
+  name: string;
+  version: string;
+  config_version: number;
+  timezone: string;
+  server_time: string;
+  utc_offset: string;
+  hostname: string;
+  platform: string;
+  python_version: string;
+  in_app_update: boolean;
+  resources: SystemResources;
+  engines: Record<string, { status: string; ts: string; message: string; config_version: number } | null>;
+}
+
 export interface Deployment {
   id: number;
   ts: string;

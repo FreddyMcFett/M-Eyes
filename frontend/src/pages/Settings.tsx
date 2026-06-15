@@ -63,6 +63,12 @@ export default function Settings() {
     queryKey: ['app-settings'],
     queryFn: () => api.get<SettingsValues>('/api/v1/system/settings'),
   });
+  const { data: timezones } = useQuery({
+    queryKey: ['timezones'],
+    queryFn: () => api.get<{ timezones: string[] }>('/api/v1/system/timezones'),
+    enabled: tab === 'system',
+    staleTime: Infinity,
+  });
   const { data: tls } = useQuery({
     queryKey: ['tls-status'],
     queryFn: () => api.get<TlsStatus>('/api/v1/system/certificates/status'),
@@ -340,6 +346,16 @@ export default function Settings() {
             </FormField>
             <FormField label="Organization" hint="Default Organization (O) field in generated CSRs">
               <input className="f-input" value={values.organization_name ?? ''} onChange={(e) => set('organization_name', e.target.value)} placeholder="Example Corp" />
+            </FormField>
+            <FormField label="Time zone" hint="IANA zone used to display times across the dashboards">
+              <select className="f-input" value={values.timezone ?? 'UTC'} onChange={(e) => set('timezone', e.target.value)}>
+                {!(timezones?.timezones ?? []).includes(values.timezone ?? 'UTC') && values.timezone && (
+                  <option value={values.timezone}>{values.timezone}</option>
+                )}
+                {(timezones?.timezones ?? ['UTC']).map((tz) => (
+                  <option key={tz} value={tz}>{tz}</option>
+                ))}
+              </select>
             </FormField>
             <SaveBtn />
           </div>

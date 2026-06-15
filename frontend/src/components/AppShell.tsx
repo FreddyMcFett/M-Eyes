@@ -13,6 +13,7 @@ import {
   History,
   KeyRound,
   LayoutDashboard,
+  LayoutGrid,
   Layers,
   List,
   ListChecks,
@@ -138,6 +139,9 @@ export default function AppShell() {
         </div>
         <nav className="flex-1 overflow-y-auto py-2">
           <NavLink to="/" end className={linkClass}>
+            <LayoutGrid size={14} /> Command Center
+          </NavLink>
+          <NavLink to="/dashboard" className={linkClass}>
             <LayoutDashboard size={14} /> Dashboard
           </NavLink>
           {SECTIONS.map((section) => {

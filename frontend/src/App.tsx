@@ -5,6 +5,7 @@ import AppShell from './components/AppShell';
 import { ToastProvider } from './components/Toast';
 import Login from './pages/Login';
 import SsoCallback from './pages/SsoCallback';
+import CommandCenter from './pages/CommandCenter';
 import Dashboard from './pages/Dashboard';
 import Assets from './pages/assets/Assets';
 import Integrations from './pages/integrations/Integrations';
@@ -55,7 +56,8 @@ export default function App() {
                 </RequireAuth>
               }
             >
-              <Route index element={<Dashboard />} />
+              <Route index element={<CommandCenter />} />
+              <Route path="dashboard" element={<Dashboard />} />
               <Route path="ipam" element={<Networks />} />
               <Route path="ipam/:id" element={<NetworkDetail />} />
               <Route path="dns" element={<Zones />} />
