@@ -452,11 +452,125 @@
 .cc-scroll::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.3); border-radius: 999px; }
 .cc-scroll::-webkit-scrollbar-track { background: transparent; }
 
+/* Greeting (italic hero salutation) -------------------------------------- */
+.cc-greeting {
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  color: #e2eefc;
+  text-shadow: 0 0 22px rgba(34, 211, 238, 0.28);
+}
+
+/* Threat fabric map (the SVG exposure graph) ----------------------------- */
+.cc-map {
+  position: relative;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+.cc-map-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-width: 820px; /* keep the graph legible; scroll on very narrow screens */
+}
+.cc-map-src-name {
+  fill: var(--cc-text);
+  font-size: 12px;
+  font-weight: 500;
+}
+.cc-map-src-val {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.cc-map-core-val {
+  font-size: 31px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.cc-map-core-lbl {
+  fill: var(--cc-muted);
+  font-size: 8.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.cc-map-hub-val {
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.cc-map-hub-lbl {
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.cc-map-card {
+  fill: rgba(8, 15, 30, 0.55);
+  stroke: var(--cc-line);
+  stroke-width: 1;
+}
+.cc-map-card-val {
+  font-size: 21px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.cc-map-card-lbl {
+  fill: var(--cc-muted);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* Bottom metric strip chips --------------------------------------------- */
+.cc-metric {
+  position: relative;
+  background: linear-gradient(160deg, rgba(34, 211, 238, 0.07), rgba(13, 21, 40, 0.5));
+  border: 1px solid var(--cc-line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  overflow: hidden;
+}
+.cc-metric::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, currentColor, transparent);
+  background-size: 200% 100%;
+  opacity: 0.6;
+  animation: cc-edge 4s linear infinite;
+}
+.cc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--cc-muted);
+}
+.cc-chip > b {
+  width: 13px;
+  height: 13px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 3px;
+  font-size: 8px;
+  font-weight: 800;
+  color: #04060d;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cc-root::before,
   .cc-root::after,
   .cc-panel::before,
   .cc-stat-bar,
+  .cc-metric::after,
   .cc-title,
   .cc-kicker,
   .cc-ring__ticks,

@@ -1,3 +1,15 @@
+/** Compact count for HUD readouts: 273000 → "273K", 1_250_000 → "1.2M". */
+export function formatCompact(n: number | null | undefined): string {
+  if (n === null || n === undefined || !Number.isFinite(n)) return '—';
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) {
+    const m = n / 1_000_000;
+    return `${abs >= 10_000_000 ? Math.round(m) : m.toFixed(1)}M`;
+  }
+  if (abs >= 1000) return `${Math.round(n / 1000)}K`;
+  return `${Math.round(n)}`;
+}
+
 /** Human-readable byte size (binary units): 1536 → "1.5 KiB". */
 export function formatBytes(bytes: number | null | undefined, digits = 1): string {
   if (bytes === null || bytes === undefined || !Number.isFinite(bytes)) return '—';
