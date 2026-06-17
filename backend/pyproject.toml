@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "m-eyes"
-version = "1.10.0"
+version = "1.10.1"
 description = "M-Eyes - an open-source DDI (DNS, DHCP, IPAM) platform with Fortinet ecosystem integration"
 requires-python = ">=3.11"
 dependencies = [

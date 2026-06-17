@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+## [1.10.1](https://github.com/FreddyMcFett/M-Eyes/compare/v1.10.0...v1.10.1) (2026-06-17)
+
+
+### Bug Fixes
+
+* **ci:** build frontend image natively to avoid slow emulated arm64 build ([6d5481b](https://github.com/FreddyMcFett/M-Eyes/commit/6d5481b5735a1ec40379f82c625cc9e328967a41))
+
 # [1.10.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.9.0...v1.10.0) (2026-06-17)
 
 
