@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+## [1.10.2](https://github.com/FreddyMcFett/M-Eyes/compare/v1.10.1...v1.10.2) (2026-06-17)
+
+
+### Bug Fixes
+
+* **command-center:** calmer, cleaner Command Center surface ([4a60c70](https://github.com/FreddyMcFett/M-Eyes/commit/4a60c70302f80019eed16227d80a8b2ec919c7a0))
+
 ## [1.10.1](https://github.com/FreddyMcFett/M-Eyes/compare/v1.10.0...v1.10.1) (2026-06-17)
 
 
