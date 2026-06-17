@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+# [1.10.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.9.0...v1.10.0) (2026-06-17)
+
+
+### Features
+
+* **command-center:** exposure-map hero with greeting & metric strip ([cdf135c](https://github.com/FreddyMcFett/M-Eyes/commit/cdf135cde8c6acb91b8f6f93354633dcb6786af6))
+
 # [1.9.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.8.1...v1.9.0) (2026-06-15)
 
 
