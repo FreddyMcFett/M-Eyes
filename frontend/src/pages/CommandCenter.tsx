@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Activity,
@@ -7,17 +7,18 @@ import {
   Bug,
   Crosshair,
   Flame,
-  Plug,
+  Moon,
   Radar,
   Radio,
   ScanLine,
   Server,
   Shield,
   ShieldAlert,
-  ShieldOff,
   Signal,
+  Sun,
+  Sunrise,
+  Sunset,
   Waypoints,
-  Workflow,
 } from 'lucide-react';
 import { api } from '../api/client';
 import {
@@ -31,7 +32,15 @@ import {
 } from '../api/types';
 import { useClock } from '../hooks/useClock';
 import { LiveEvent, useEventStream } from '../hooks/useEventStream';
+import { useCountUp } from '../hooks/useCountUp';
+import ThreatFabricMap, { FabricSource } from '../components/ThreatFabricMap';
 import '../theme/command.css';
+
+interface MeOut {
+  username: string;
+  display_name: string;
+  role: string;
+}
 
 /* --------------------------------------------------------------------------
    The Command Center is a Cortex-style Security Operations console. It is
@@ -54,43 +63,6 @@ const SEV_LABEL: Record<string, string> = {
   info: 'INFO',
   debug: 'TRACE',
 };
-
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-}
-
-/** Animates a number from its previous value to `target` with an ease-out cubic. */
-function useCountUp(target: number, ms = 1100): number {
-  const [val, setVal] = useState(0);
-  const fromRef = useRef(0);
-  const rafRef = useRef<number>();
-
-  useEffect(() => {
-    if (prefersReducedMotion()) {
-      fromRef.current = target;
-      setVal(target);
-      return;
-    }
-    const from = fromRef.current;
-    const start = performance.now();
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / ms);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setVal(from + (target - from) * eased);
-      if (p < 1) {
-        rafRef.current = requestAnimationFrame(tick);
-      } else {
-        fromRef.current = target;
-      }
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, [target, ms]);
-
-  return val;
-}
 
 function Counter({ value, className, style }: { value: number; className?: string; style?: React.CSSProperties }) {
   const v = useCountUp(value);
@@ -155,34 +127,47 @@ function Panel({
   );
 }
 
-function StatTile({
+function Chip({ letter, count, color }: { letter: string; count: number; color: string }) {
+  return (
+    <span className="cc-chip">
+      <b style={{ background: color }}>{letter}</b>
+      {count}
+    </span>
+  );
+}
+
+function MetricCard({
   icon,
   label,
   value,
-  sub,
   color,
+  sub,
+  chips,
 }: {
   icon: JSX.Element;
   label: string;
   value: number;
-  sub: string;
   color: string;
+  sub?: string;
+  chips?: JSX.Element;
 }) {
   return (
-    <div className="cc-stat" style={{ color }}>
+    <div className="cc-metric" style={{ color }}>
       <span className="cc-corner cc-corner--tl" />
       <span className="cc-corner cc-corner--br" />
-      <div className="flex items-center justify-between">
-        <span>{icon}</span>
-        <span className="text-[10px] tracking-[0.2em] uppercase" style={{ color: 'var(--cc-muted)' }}>
-          {label}
-        </span>
+      <div className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase" style={{ color: 'var(--cc-muted)' }}>
+        <span style={{ color }}>{icon}</span>
+        {label}
       </div>
-      <Counter value={value} className="cc-stat-value text-3xl mt-3 cc-glow block" />
-      <div className="text-[10px] mt-1.5 tracking-wide" style={{ color: 'var(--cc-muted)' }}>
-        {sub}
+      <div className="flex items-baseline gap-2.5 mt-2">
+        <Counter value={value} className="cc-stat-value text-3xl cc-glow" style={{ color }} />
+        {sub && (
+          <span className="text-[11px]" style={{ color: 'var(--cc-muted)' }}>
+            {sub}
+          </span>
+        )}
       </div>
-      <span className="cc-stat-bar" />
+      {chips && <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5">{chips}</div>}
     </div>
   );
 }
@@ -277,6 +262,11 @@ export default function CommandCenter() {
     queryFn: () => api.get<{ version: string; config_version: number }>('/api/v1/system/info'),
     refetchInterval: 10000,
   });
+  const { data: me } = useQuery({
+    queryKey: ['cc-me'],
+    queryFn: () => api.get<MeOut>('/api/v1/auth/me'),
+    staleTime: 5 * 60 * 1000,
+  });
   const liveEvents = useEventStream(28);
 
   const clock = useMemo(() => {
@@ -290,6 +280,16 @@ export default function CommandCenter() {
     }
     return { time, date, zone };
   }, [now]);
+
+  // Time-of-day greeting addressed to the operator on shift.
+  const greeting = useMemo(() => {
+    const h = now.getHours();
+    const part =
+      h < 5 ? { word: 'Good Night', Icon: Moon } : h < 12 ? { word: 'Good Morning', Icon: Sunrise } : h < 18 ? { word: 'Good Afternoon', Icon: Sun } : { word: 'Good Evening', Icon: Sunset };
+    const raw = (me?.display_name || me?.username || '').trim();
+    const name = raw ? raw.split(/\s+/)[0] : 'Operator';
+    return { ...part, name: name.charAt(0).toUpperCase() + name.slice(1) };
+  }, [now, me]);
 
   /* --- Derived security metrics ----------------------------------------- */
   // Memoised so their identity stays stable for the analytics useMemo deps.
@@ -306,9 +306,20 @@ export default function CommandCenter() {
   const feedEntries = feedList.reduce((sum, f) => sum + (f.entry_count ?? 0), 0);
   const indicatorsBlocked = blockCount + tfIocs + feedEntries;
 
-  const criticalAssets = assetList.filter((a) => a.criticality === 'critical' || a.criticality === 'high').length;
   const sourcesOnline = intList.filter((i) => i.enabled && !isFailed(i.last_status)).length;
   const playbooksArmed = autoList.filter((a) => a.enabled).length;
+
+  // Asset criticality breakdown for the metric-strip chips.
+  const crit = useMemo(() => {
+    const c = { critical: 0, high: 0, medium: 0, low: 0 };
+    for (const a of assetList) {
+      if (a.criticality === 'critical') c.critical += 1;
+      else if (a.criticality === 'high') c.high += 1;
+      else if (a.criticality === 'low') c.low += 1;
+      else c.medium += 1;
+    }
+    return c;
+  }, [assetList]);
 
   // Composite defense-posture score (0–100): protection coverage + feed/source
   // operability + automation readiness.
@@ -396,14 +407,55 @@ export default function CommandCenter() {
     return { all, max: Math.max(1, ...all.map((a) => a.entries)) };
   }, [tfList, feedList]);
 
-  const tiles = [
-    { icon: <ShieldAlert size={18} />, label: 'Indicators Blocked', value: indicatorsBlocked, sub: `${blockCount} blocklist · ${tfIocs} IOC`, color: 'var(--cc-cyan)' },
-    { icon: <ShieldOff size={18} />, label: 'DNS Firewall', value: rpzList.length, sub: `${rpzActive} active rules`, color: 'var(--cc-violet)' },
-    { icon: <Radar size={18} />, label: 'Intel Feeds', value: tfList.length + feedList.length, sub: `${tfIocs.toLocaleString()} IOCs tracked`, color: 'var(--cc-teal)' },
-    { icon: <Boxes size={18} />, label: 'Protected Assets', value: assetList.length, sub: `${criticalAssets} critical`, color: 'var(--cc-green)' },
-    { icon: <Plug size={18} />, label: 'Data Sources', value: intList.length, sub: `${sourcesOnline} online`, color: 'var(--cc-amber)' },
-    { icon: <Workflow size={18} />, label: 'Playbooks', value: autoList.length, sub: `${playbooksArmed} armed`, color: 'var(--cc-pink)' },
+  // Left source nodes for the fabric map: intel/distribution feeds + the manual
+  // blocklist, ranked by how many indicators each contributes, capped to 6.
+  const fabricSources = useMemo<FabricSource[]>(() => {
+    const tf = tfList.map((f) => ({
+      id: `tf-${f.id}`,
+      name: f.name,
+      value: f.entry_count ?? 0,
+      color: !f.enabled ? 'var(--cc-muted)' : isFailed(f.last_status) ? 'var(--cc-red)' : 'var(--cc-teal)',
+    }));
+    const df = feedList.map((f) => ({
+      id: `df-${f.id}`,
+      name: f.name,
+      value: f.entry_count ?? 0,
+      color: f.enabled ? 'var(--cc-cyan)' : 'var(--cc-muted)',
+    }));
+    const bl =
+      blockCount > 0 ? [{ id: 'blocklist', name: 'Manual Blocklist', value: blockCount, color: 'var(--cc-violet)' }] : [];
+    const all = [...tf, ...df, ...bl].sort((a, b) => b.value - a.value).slice(0, 6);
+    // Always show at least one node so the graph never looks broken.
+    return all.length ? all : [{ id: 'none', name: 'No intel sources', value: 0, color: 'var(--cc-muted)' }];
+  }, [tfList, feedList, blockCount]);
+
+  const fabricMetrics = [
+    { id: 'ind', value: indicatorsBlocked, label: 'THREAT INDICATORS', color: 'var(--cc-cyan)' },
+    { id: 'assets', value: assetList.length, label: 'PROTECTED ASSETS', color: 'var(--cc-teal)' },
+    { id: 'events', value: sev.total, label: 'EVENTS ANALYSED', color: 'var(--cc-green)' },
   ];
+
+  const activeBranch = {
+    id: 'active',
+    label: 'ACTIVE SIGNALS',
+    total: sev.error + sev.warning,
+    color: 'var(--cc-red)',
+    cards: [
+      { id: 'req', value: sev.error, label: 'Require Attention', color: 'var(--cc-red)' },
+      { id: 'prog', value: sev.warning, label: 'In Progress', color: 'var(--cc-amber)' },
+    ],
+  };
+
+  const resolvedBranch = {
+    id: 'resolved',
+    label: 'DEFENCES',
+    total: sourcesOnline + playbooksArmed,
+    color: 'var(--cc-teal)',
+    cards: [
+      { id: 'src', value: sourcesOnline, label: 'Sources Online', color: 'var(--cc-green)' },
+      { id: 'pb', value: playbooksArmed, label: 'Playbooks Armed', color: 'var(--cc-teal)' },
+    ],
+  };
 
   const fmtClock = (ms: number | null) => (ms ? new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—');
 
@@ -413,9 +465,12 @@ export default function CommandCenter() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="cc-kicker flex items-center gap-2 text-[11px] tracking-[0.3em] uppercase" style={{ color: 'var(--cc-muted)' }}>
-            <Signal size={13} className="cc-pulse" style={{ color: 'var(--cc-green)' }} /> M-Eyes · Security Operations
+            <Signal size={13} className="cc-pulse" style={{ color: 'var(--cc-green)' }} /> Exposure Management Command Center
           </div>
-          <h1 className="cc-title text-4xl md:text-5xl mt-1">THREAT DEFENSE COMMAND</h1>
+          <h1 className="cc-greeting text-3xl md:text-4xl mt-1.5 flex items-center gap-2.5">
+            <greeting.Icon size={28} className="cc-pulse shrink-0" style={{ color: 'var(--cc-amber)', fontStyle: 'normal' }} />
+            {greeting.word}, {greeting.name}
+          </h1>
           <div className="flex items-center gap-3 mt-2 text-xs flex-wrap" style={{ color: 'var(--cc-muted)' }}>
             <span className="inline-flex items-center gap-1.5">
               <span className="cc-dot cc-ping cc-pulse" style={{ background: posture.color, color: posture.color }} />
@@ -443,11 +498,54 @@ export default function CommandCenter() {
         </div>
       </div>
 
-      {/* Stat strip ------------------------------------------------------ */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        {tiles.map((t) => (
-          <StatTile key={t.label} {...t} />
-        ))}
+      {/* Exposure fabric map (centerpiece) ------------------------------- */}
+      <ThreatFabricMap sources={fabricSources} metrics={fabricMetrics} active={activeBranch} resolved={resolvedBranch} />
+
+      {/* Metric strip ---------------------------------------------------- */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <MetricCard
+          icon={<Boxes size={16} />}
+          label="Vulnerable Assets"
+          value={assetList.length}
+          color="var(--cc-cyan)"
+          sub={`${crit.critical + crit.high} elevated`}
+          chips={
+            <>
+              <Chip letter="C" count={crit.critical} color="var(--cc-red)" />
+              <Chip letter="H" count={crit.high} color="var(--cc-amber)" />
+              <Chip letter="M" count={crit.medium} color="var(--cc-cyan)" />
+              <Chip letter="L" count={crit.low} color="var(--cc-teal)" />
+            </>
+          }
+        />
+        <MetricCard
+          icon={<Activity size={16} />}
+          label="Active Events"
+          value={sev.total}
+          color="var(--cc-violet)"
+          sub="last 250"
+          chips={
+            <>
+              <Chip letter="C" count={sev.error} color="var(--cc-red)" />
+              <Chip letter="W" count={sev.warning} color="var(--cc-amber)" />
+              <Chip letter="I" count={sev.info} color="var(--cc-cyan)" />
+            </>
+          }
+        />
+        <MetricCard
+          icon={<ShieldAlert size={16} />}
+          label="Indicators Enforced"
+          value={indicatorsBlocked}
+          color="var(--cc-green)"
+          sub={`${blockCount} blocklist · ${tfIocs.toLocaleString()} IOC`}
+          chips={
+            <>
+              <Chip letter="F" count={tfList.length + feedList.length} color="var(--cc-teal)" />
+              <Chip letter="R" count={rpzActive} color="var(--cc-violet)" />
+              <Chip letter="S" count={sourcesOnline} color="var(--cc-green)" />
+            </>
+          }
+        />
       </div>
 
       {/* Posture + threat-activity timeline ------------------------------ */}
