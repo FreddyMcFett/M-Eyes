@@ -6,12 +6,11 @@ import { prefersReducedMotion, useCountUp } from '../hooks/useCountUp';
    ThreatFabricMap — the signature "exposure map" of the Command Center.
 
    A single responsive SVG that draws the security fabric as a flow graph:
-   intel sources on the left fan in through glowing bezier conduits to an
-   animated concentric-ring core (the headline KPIs), then fan back out to two
-   outcome branches (active signals / enforced defenses) on the right. Every
-   number counts up; the conduits pulse with travelling dashes; the core rings
-   rotate and a radar sweep orbits the centre. All motion collapses under
-   `prefers-reduced-motion`.
+   intel sources on the left flow rightward through bezier conduits to a
+   concentric-ring core (the headline KPIs), then continue rightward to two
+   outcome branches (active signals / defences). Every number counts up; the
+   conduits carry travelling dashes that all flow left→right and the core rings
+   rotate slowly. All motion collapses under `prefers-reduced-motion`.
 
    Everything lives in one SVG view-box so the conduits always meet their nodes
    precisely, at any width.
@@ -82,42 +81,26 @@ function NumText({
   return <text {...rest}>{formatCompact(v)}</text>;
 }
 
-/** A travelling dash conduit; the dash offset animates so it appears to flow. */
+/** A travelling dash conduit; the dash offset animates so it flows start→end. */
 function Conduit({
   d,
   stroke,
   motion,
-  reverse,
   dur = 2.4,
 }: {
   d: string;
   stroke: string;
   motion: boolean;
-  reverse?: boolean;
   dur?: number;
 }) {
   return (
     <g>
       {/* faint full-strength base line */}
-      <path d={d} fill="none" stroke={stroke} strokeOpacity={0.18} strokeWidth={1.6} />
-      {/* travelling energy dashes */}
-      <path
-        d={d}
-        fill="none"
-        stroke={stroke}
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeDasharray="2 12"
-        style={{ filter: 'url(#fm-glow)' }}
-      >
+      <path d={d} fill="none" stroke={stroke} strokeOpacity={0.16} strokeWidth={1.4} />
+      {/* travelling energy dashes — always flow along the path direction */}
+      <path d={d} fill="none" stroke={stroke} strokeWidth={1.6} strokeLinecap="round" strokeDasharray="2 12">
         {motion && (
-          <animate
-            attributeName="stroke-dashoffset"
-            from={reverse ? '0' : '28'}
-            to={reverse ? '28' : '0'}
-            dur={`${dur}s`}
-            repeatCount="indefinite"
-          />
+          <animate attributeName="stroke-dashoffset" from="28" to="0" dur={`${dur}s`} repeatCount="indefinite" />
         )}
       </path>
     </g>
@@ -142,22 +125,11 @@ export default function ThreatFabricMap({ sources, metrics, active, resolved }: 
     <div className="cc-map">
       <svg viewBox={`0 0 ${VW} ${VH}`} className="cc-map-svg" role="img" aria-label="Security fabric exposure map">
         <defs>
-          <linearGradient id={`fm-left-${uid}`} x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="var(--cc-teal)" />
-            <stop offset="100%" stopColor="var(--cc-cyan)" />
-          </linearGradient>
           <radialGradient id={`fm-core-${uid}`} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(34,211,238,0.30)" />
-            <stop offset="45%" stopColor="rgba(45,212,191,0.10)" />
+            <stop offset="0%" stopColor="rgba(34,211,238,0.18)" />
+            <stop offset="45%" stopColor="rgba(45,212,191,0.06)" />
             <stop offset="100%" stopColor="transparent" />
           </radialGradient>
-          <filter id="fm-glow" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="2.2" result="b" />
-            <feMerge>
-              <feMergeNode in="b" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
 
         {/* Core ambient glow */}
@@ -167,15 +139,15 @@ export default function ThreatFabricMap({ sources, metrics, active, resolved }: 
         {src.map((s, i) => (
           <Conduit key={`cl-${s.id}`} d={hCurve(SRC_X, srcY(i), CX - R, CY)} stroke={s.color} motion={motion} dur={2 + (i % 4) * 0.35} />
         ))}
-        {/* core → branch hubs */}
-        <Conduit d={hCurve(CX + R, CY, HX - HUB_R, AY)} stroke={active.color} motion={motion} reverse dur={2.2} />
-        <Conduit d={hCurve(CX + R, CY, HX - HUB_R, RY)} stroke={resolved.color} motion={motion} reverse dur={2.6} />
-        {/* hubs → cards */}
+        {/* core → branch hubs (flow outward, to the right) */}
+        <Conduit d={hCurve(CX + R, CY, HX - HUB_R, AY)} stroke={active.color} motion={motion} dur={2.2} />
+        <Conduit d={hCurve(CX + R, CY, HX - HUB_R, RY)} stroke={resolved.color} motion={motion} dur={2.6} />
+        {/* hubs → cards (flow outward, to the right) */}
         {cardRows(active, ACTIVE_CARD_Y).map((c, i) => (
-          <Conduit key={`al-${c.id}`} d={hCurve(HX + HUB_R, AY, CARD_X, ACTIVE_CARD_Y[i])} stroke={c.color} motion={motion} reverse dur={2 + i * 0.4} />
+          <Conduit key={`al-${c.id}`} d={hCurve(HX + HUB_R, AY, CARD_X, ACTIVE_CARD_Y[i])} stroke={c.color} motion={motion} dur={2 + i * 0.4} />
         ))}
         {cardRows(resolved, RESOLVED_CARD_Y).map((c, i) => (
-          <Conduit key={`rl-${c.id}`} d={hCurve(HX + HUB_R, RY, CARD_X, RESOLVED_CARD_Y[i])} stroke={c.color} motion={motion} reverse dur={2.2 + i * 0.4} />
+          <Conduit key={`rl-${c.id}`} d={hCurve(HX + HUB_R, RY, CARD_X, RESOLVED_CARD_Y[i])} stroke={c.color} motion={motion} dur={2.2 + i * 0.4} />
         ))}
 
         {/* ---- Left source nodes ----------------------------------------- */}
@@ -190,19 +162,15 @@ export default function ThreatFabricMap({ sources, metrics, active, resolved }: 
                 {name}
               </text>
               <NumText value={s.value} x={290} y={y + 4} textAnchor="end" className="cc-map-src-val" style={{ fill: s.color }} />
-              <circle cx={SRC_X} cy={y} r={5} fill={s.color} style={{ filter: 'url(#fm-glow)' }} />
-              {motion && <circle cx={SRC_X} cy={y} r={5} fill="none" stroke={s.color} strokeWidth={1}>
-                <animate attributeName="r" from="5" to="13" dur="2.4s" repeatCount="indefinite" />
-                <animate attributeName="opacity" from="0.7" to="0" dur="2.4s" repeatCount="indefinite" />
-              </circle>}
+              <circle cx={SRC_X} cy={y} r={4.5} fill={s.color} />
             </g>
           );
         })}
 
         {/* ---- Core rings ------------------------------------------------- */}
-        <g style={{ filter: 'url(#fm-glow)' }}>
-          <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--cc-cyan)" strokeOpacity={0.22} strokeWidth={1} />
-          <circle cx={CX} cy={CY} r={70} fill="none" stroke="var(--cc-teal)" strokeOpacity={0.28} strokeWidth={1} />
+        <g>
+          <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--cc-cyan)" strokeOpacity={0.18} strokeWidth={1} />
+          <circle cx={CX} cy={CY} r={70} fill="none" stroke="var(--cc-teal)" strokeOpacity={0.22} strokeWidth={1} />
           {/* rotating dashed ring */}
           <g>
             {motion && (
@@ -216,14 +184,6 @@ export default function ThreatFabricMap({ sources, metrics, active, resolved }: 
               <animateTransform attributeName="transform" type="rotate" from={`360 ${CX} ${CY}`} to={`0 ${CX} ${CY}`} dur="70s" repeatCount="indefinite" />
             )}
             <circle cx={CX} cy={CY} r={88} fill="none" stroke="var(--cc-violet)" strokeOpacity={0.45} strokeWidth={1} strokeDasharray="1 11" />
-          </g>
-          {/* radar sweep */}
-          <g>
-            {motion && (
-              <animateTransform attributeName="transform" type="rotate" from={`0 ${CX} ${CY}`} to={`360 ${CX} ${CY}`} dur="6s" repeatCount="indefinite" />
-            )}
-            <path d={`M ${CX} ${CY} L ${CX + 104} ${CY - 26} A 104 104 0 0 1 ${CX + 104} ${CY + 4} Z`} fill="var(--cc-cyan)" fillOpacity={0.12} />
-            <line x1={CX} y1={CY} x2={CX + 104} y2={CY} stroke="var(--cc-cyan)" strokeOpacity={0.6} strokeWidth={1.4} />
           </g>
           {/* orbiting comet dots */}
           {motion &&
@@ -264,15 +224,9 @@ export default function ThreatFabricMap({ sources, metrics, active, resolved }: 
           { branch: resolved, hy: RY, lblY: RY + 38, ys: RESOLVED_CARD_Y },
         ].map(({ branch, hy, lblY, ys }) => (
           <g key={`hub-${branch.id}`}>
-            <circle cx={HX} cy={hy} r={HUB_R + 5} fill="none" stroke={branch.color} strokeOpacity={0.25} strokeWidth={1} />
-            <circle cx={HX} cy={hy} r={HUB_R} fill="rgba(8,15,30,0.85)" stroke={branch.color} strokeWidth={1.6} style={{ filter: 'url(#fm-glow)' }} />
+            <circle cx={HX} cy={hy} r={HUB_R + 5} fill="none" stroke={branch.color} strokeOpacity={0.22} strokeWidth={1} />
+            <circle cx={HX} cy={hy} r={HUB_R} fill="rgba(8,15,30,0.85)" stroke={branch.color} strokeWidth={1.4} />
             <NumText value={branch.total} x={HX} y={hy + 4} textAnchor="middle" className="cc-map-hub-val" style={{ fill: branch.color }} />
-            {motion && (
-              <circle cx={HX} cy={hy} r={HUB_R} fill="none" stroke={branch.color} strokeWidth={1}>
-                <animate attributeName="r" from={`${HUB_R}`} to={`${HUB_R + 14}`} dur="2.8s" repeatCount="indefinite" />
-                <animate attributeName="opacity" from="0.6" to="0" dur="2.8s" repeatCount="indefinite" />
-              </circle>
-            )}
             <text x={HX} y={lblY} textAnchor="middle" className="cc-map-hub-lbl" style={{ fill: branch.color }}>
               {branch.label}
             </text>

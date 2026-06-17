@@ -182,7 +182,6 @@ function PostureRing({ score, color, label }: { score: number; color: string; la
     >
       <div className="cc-ring__ticks" />
       <div className="cc-ring__track" />
-      <div className="cc-ring__radar" />
       <div className="cc-ring__core">
         <div className="text-5xl font-extrabold cc-glow leading-none" style={{ color }}>
           {pct}
@@ -465,15 +464,15 @@ export default function CommandCenter() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="cc-kicker flex items-center gap-2 text-[11px] tracking-[0.3em] uppercase" style={{ color: 'var(--cc-muted)' }}>
-            <Signal size={13} className="cc-pulse" style={{ color: 'var(--cc-green)' }} /> Exposure Management Command Center
+            <Signal size={13} style={{ color: 'var(--cc-green)' }} /> Exposure Management Command Center
           </div>
           <h1 className="cc-greeting text-3xl md:text-4xl mt-1.5 flex items-center gap-2.5">
-            <greeting.Icon size={28} className="cc-pulse shrink-0" style={{ color: 'var(--cc-amber)', fontStyle: 'normal' }} />
+            <greeting.Icon size={28} className="shrink-0" style={{ color: 'var(--cc-amber)' }} />
             {greeting.word}, {greeting.name}
           </h1>
           <div className="flex items-center gap-3 mt-2 text-xs flex-wrap" style={{ color: 'var(--cc-muted)' }}>
             <span className="inline-flex items-center gap-1.5">
-              <span className="cc-dot cc-ping cc-pulse" style={{ background: posture.color, color: posture.color }} />
+              <span className="cc-dot" style={{ background: posture.color, color: posture.color }} />
               Defense posture <span style={{ color: posture.color, fontWeight: 600 }}>{posture.label}</span>
             </span>
             <span>·</span>
@@ -613,7 +612,7 @@ export default function CommandCenter() {
               <div key={f.key}>
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="inline-flex items-center gap-2 min-w-0">
-                    <span className="cc-dot cc-pulse shrink-0" style={{ background: f.color, color: f.color }} />
+                    <span className="cc-dot shrink-0" style={{ background: f.color, color: f.color }} />
                     <span className="truncate" style={{ color: 'var(--cc-text)' }}>
                       {f.name}
                     </span>
@@ -623,7 +622,7 @@ export default function CommandCenter() {
                   </span>
                 </div>
                 <div className="cc-track">
-                  <span style={{ width: `${(f.entries / intel.max) * 100}%`, background: f.color, boxShadow: `0 0 10px ${f.color}` }} />
+                  <span style={{ width: `${(f.entries / intel.max) * 100}%`, background: f.color, boxShadow: `0 0 4px ${f.color}` }} />
                 </div>
                 <div className="text-[10px] mt-0.5" style={{ color: 'var(--cc-muted)' }}>
                   {f.kind} · {f.sub}
@@ -636,11 +635,11 @@ export default function CommandCenter() {
         <Panel
           icon={<Waypoints size={14} style={{ color: 'var(--cc-cyan)' }} />}
           title="Security Fabric"
-          right={<span className="cc-dot cc-pulse" style={{ background: 'var(--cc-green)', color: 'var(--cc-green)' }} />}
+          right={<span className="cc-dot" style={{ background: 'var(--cc-green)', color: 'var(--cc-green)' }} />}
         >
           <div className="cc-bus">
             <div className="cc-node flex items-center gap-3 py-2">
-              <span className="cc-dot cc-pulse" style={{ background: 'var(--cc-green)', color: 'var(--cc-green)' }} />
+              <span className="cc-dot" style={{ background: 'var(--cc-green)', color: 'var(--cc-green)' }} />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-semibold" style={{ color: 'var(--cc-text)' }}>
                   M-Eyes Core
@@ -663,7 +662,7 @@ export default function CommandCenter() {
               const statusText = !i.enabled ? 'paused' : isFailed(i.last_status) ? 'fault' : isHealthy(i.last_status) ? 'online' : 'idle';
               return (
                 <div key={i.id} className="cc-node flex items-center gap-3 py-2">
-                  <span className="cc-dot cc-pulse" style={{ background: color, color }} />
+                  <span className="cc-dot" style={{ background: color, color }} />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold truncate" style={{ color: 'var(--cc-text)' }}>
                       {i.name}
@@ -719,7 +718,7 @@ export default function CommandCenter() {
                     {cat}
                   </span>
                   <div className="cc-track flex-1">
-                    <span style={{ width: `${(count / vectors.max) * 100}%`, background: 'var(--cc-violet)', boxShadow: '0 0 8px var(--cc-violet)' }} />
+                    <span style={{ width: `${(count / vectors.max) * 100}%`, background: 'var(--cc-violet)', boxShadow: '0 0 4px var(--cc-violet)' }} />
                   </div>
                   <span className="text-[11px] font-mono w-6 text-right" style={{ color: 'var(--cc-text)' }}>
                     {count}
@@ -736,7 +735,7 @@ export default function CommandCenter() {
         <Panel
           icon={<Radio size={14} style={{ color: 'var(--cc-green)' }} />}
           title="Live Threat Stream"
-          right={<span className="cc-dot cc-ping cc-pulse" style={{ background: 'var(--cc-green)', color: 'var(--cc-green)' }} />}
+          right={<span className="cc-dot cc-pulse" style={{ background: 'var(--cc-green)', color: 'var(--cc-green)' }} />}
           className="xl:col-span-2"
         >
           <div className="cc-feed cc-scroll space-y-0.5 overflow-y-auto" style={{ maxHeight: 300 }}>
@@ -774,7 +773,7 @@ export default function CommandCenter() {
                   className="flex items-center gap-3 p-3 rounded-lg"
                   style={{ border: '1px solid var(--cc-line)', background: 'rgba(8,15,30,0.5)' }}
                 >
-                  <span className="cc-dot cc-pulse" style={{ background: color, color }} />
+                  <span className="cc-dot" style={{ background: color, color }} />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold truncate" style={{ color: 'var(--cc-text)' }}>
                       {a.name}
