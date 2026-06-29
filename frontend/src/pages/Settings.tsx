@@ -14,7 +14,6 @@ import {
   Lock,
   Radio,
   RefreshCw,
-  RotateCw,
   Server,
   ShieldCheck,
   SlidersHorizontal,
@@ -139,6 +138,14 @@ export default function Settings() {
       clearInterval(id);
     };
   }, [updating]);
+
+  // Reload automatically once the upgrade lands so the operator never has to
+  // click "reload" by hand; the short delay shows the success state first.
+  useEffect(() => {
+    if (!updateDone) return;
+    const id = setTimeout(() => window.location.reload(), 1800);
+    return () => clearTimeout(id);
+  }, [updateDone]);
 
   const checkUpdates = useMutation({
     mutationFn: () => api.get<UpdateStatus>('/api/v1/system/update-check?force=true'),
@@ -699,11 +706,13 @@ export default function Settings() {
                     </div>
                     <p className="text-xs text-muted mb-2">
                       M-Eyes is now running v{progress?.current_version ?? targetVersion.current}.
-                      Reload to load the new interface.
                     </p>
-                    <button className="f-btn-primary" onClick={() => window.location.reload()}>
-                      <RotateCw size={14} /> Reload now
-                    </button>
+                    <p className="text-xs text-muted flex items-center gap-1.5">
+                      <Loader2 size={13} className="animate-spin" /> Reloading the interface…{' '}
+                      <button className="text-info hover:underline" onClick={() => window.location.reload()}>
+                        Reload now
+                      </button>
+                    </p>
                   </div>
                 ) : updating ? (
                   <div className="border border-info rounded p-3 bg-info/5">

@@ -56,6 +56,16 @@ export function useSoftwareUpdate(enabled = true) {
     };
   }, [updating]);
 
+  // Once the restarted API reports the new version, reload automatically so the
+  // operator lands on the upgraded UI without having to click anything. A short
+  // delay lets the "Update complete" confirmation register first. nginx serves
+  // index.html with no-cache, so the reload pulls the new build's hashed assets.
+  useEffect(() => {
+    if (!done) return;
+    const id = setTimeout(() => window.location.reload(), 1800);
+    return () => clearTimeout(id);
+  }, [done]);
+
   const check = useMutation({
     mutationFn: () => api.get<UpdateStatus>('/api/v1/system/update-check?force=true'),
     onSuccess: (s) => qc.setQueryData(['update-check'], s),
