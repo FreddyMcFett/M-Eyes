@@ -46,13 +46,13 @@ def deploy(db: Session, actor: str, debug: bool = False) -> dict:
         raw = json.dumps(result)[:1000]
         if result.get("result") == 0:
             db.add(Deployment(target="kea", status="success",
-                              message=f"{subnet_count} subnet(s) deployed", config_version=version))
+                              message=f"{subnet_count} subnet(s) applied", config_version=version))
             db.flush()
             events.emit(db, "info", "deploy",
-                        f"DHCP deployment succeeded ({subnet_count} subnets, v{version})")
-            return {"status": "success", "detail": f"{subnet_count} subnet(s) deployed",
+                        f"DHCP configuration applied ({subnet_count} subnets, v{version})")
+            return {"status": "success", "detail": f"{subnet_count} subnet(s) applied",
                     "config_version": version, **({"debug": raw} if debug else {})}
-        message = f"DHCP engine rejected the config: {result.get('text', 'unknown error')}"
+        message = f"DHCP service rejected the configuration: {result.get('text', 'unknown error')}"
         db.add(Deployment(target="kea", status="failed", message=message, config_version=version))
         db.flush()
         events.emit(db, "error", "deploy", message)

@@ -1,18 +1,16 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Activity, Globe, List, Rss, Server, UploadCloud } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Activity, Globe, List, Rss, Server } from 'lucide-react';
 import { api } from '../api/client';
 import { DashboardStats, SystemStatus } from '../api/types';
 import Donut from '../components/Donut';
+import { EngineSyncBadge } from '../components/EngineStatus';
 import ResourceMonitor from '../components/ResourceMonitor';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import SystemStatusCard from '../components/SystemStatusCard';
-import { useToast } from '../components/Toast';
 import { useEventStream } from '../hooks/useEventStream';
 
 export default function Dashboard() {
-  const toast = useToast();
-  const queryClient = useQueryClient();
   const { data: stats } = useQuery({
     queryKey: ['dashboard'],
     queryFn: () => api.get<DashboardStats>('/api/v1/dashboard/stats'),
@@ -24,19 +22,6 @@ export default function Dashboard() {
     refetchInterval: 3000,
   });
   const liveEvents = useEventStream(12);
-
-  const engineLabel = (target: string) => (target === 'bind' ? 'DNS' : 'DHCP');
-
-  const deploy = useMutation({
-    mutationFn: (target: string) => api.post<{ status: string; detail: string }>(`/api/v1/deploy/${target}`),
-    onSuccess: (result, target) => {
-      const kind = result.status === 'success' ? 'success' : 'error';
-      toast(kind, `${engineLabel(target)}: ${result.detail}`);
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-      queryClient.invalidateQueries({ queryKey: ['engine-status'] });
-    },
-    onError: (err: Error, target) => toast('error', `${engineLabel(target)} deploy failed: ${err.message}`),
-  });
 
   const counts = stats?.counts ?? {};
 
@@ -71,34 +56,21 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Engines */}
+        {/* DNS & DHCP services — native, auto-applied; no manual deploy. */}
         <div className="f-card p-4">
-          <h3 className="font-semibold text-sm mb-3">Engines</h3>
-          {(['bind', 'kea'] as const).map((target) => {
-            const engine = stats?.engines?.[target];
-            return (
-              <div key={target} className="flex items-center justify-between py-2 border-b border-line last:border-0">
-                <div>
-                  <div className="font-medium text-table uppercase">{target === 'bind' ? 'DNS Engine' : 'DHCP Engine'}</div>
-                  <div className="text-xs text-muted">
-                    {engine
-                      ? `deployed v${engine.config_version} — current v${stats?.config_version}`
-                      : 'never deployed'}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {engine && <StatusBadge value={engine.status} />}
-                  <button
-                    className="f-btn-primary"
-                    disabled={deploy.isPending}
-                    onClick={() => deploy.mutate(target)}
-                  >
-                    <UploadCloud size={13} /> Deploy
-                  </button>
-                </div>
+          <h3 className="font-semibold text-sm mb-3">DNS &amp; DHCP Services</h3>
+          {(['bind', 'kea'] as const).map((target) => (
+            <div key={target} className="flex items-center justify-between py-2.5 border-b border-line last:border-0">
+              <div className="flex items-center gap-2 font-medium text-table">
+                {target === 'bind' ? <Globe size={15} className="text-accent" /> : <Server size={15} className="text-accent" />}
+                {target === 'bind' ? 'DNS' : 'DHCP'}
               </div>
-            );
-          })}
+              <EngineSyncBadge target={target} />
+            </div>
+          ))}
+          <p className="text-xs text-muted mt-3">
+            Configuration changes apply to the running services automatically.
+          </p>
         </div>
 
         {/* Live events */}

@@ -110,7 +110,7 @@ export default function ZoneDetail() {
       return api.patch(`/api/v1/zones/${id}`, body);
     },
     onSuccess: () => {
-      toast('success', 'Zone updated — deploy DNS to apply');
+      toast('success', 'Zone updated — applying to the DNS service');
       setZoneEditOpen(false);
       invalidate();
     },
