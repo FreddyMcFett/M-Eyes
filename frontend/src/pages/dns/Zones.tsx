@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Trash2, UploadCloud } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { api } from '../../api/client';
 import { DnsView, Network, Zone } from '../../api/types';
 import DataTable from '../../components/DataTable';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import { EngineSyncBadge } from '../../components/EngineStatus';
 import FormField from '../../components/FormField';
 import SlideOver from '../../components/SlideOver';
 import StatusBadge from '../../components/StatusBadge';
@@ -69,13 +70,6 @@ export default function Zones() {
     onError: (err: Error) => toast('error', err.message),
   });
 
-  const deployDns = useMutation({
-    mutationFn: () => api.post<{ status: string; detail: string }>('/api/v1/deploy/bind'),
-    onSuccess: (result) =>
-      toast(result.status === 'success' ? 'success' : 'error', `DNS: ${result.detail}`),
-    onError: (err: Error) => toast('error', err.message),
-  });
-
   return (
     <>
       <h1 className="text-lg font-semibold mb-3">DNS — Zones</h1>
@@ -126,11 +120,7 @@ export default function Zones() {
         }}
         createLabel="Create Zone"
         onRefresh={() => refetch()}
-        toolbar={
-          <button className="f-btn-secondary" disabled={deployDns.isPending} onClick={() => deployDns.mutate()}>
-            <UploadCloud size={14} /> Deploy DNS
-          </button>
-        }
+        toolbar={<EngineSyncBadge target="bind" />}
       />
 
       <SlideOver title="Create Zone" open={editorOpen} onClose={() => setEditorOpen(false)}>

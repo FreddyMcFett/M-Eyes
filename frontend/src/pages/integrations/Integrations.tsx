@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plug, RefreshCcw, Trash2, Zap } from 'lucide-react';
+import { Plus, RefreshCcw, Trash2, Zap } from 'lucide-react';
 import { api } from '../../api/client';
 import { ConnectorDescriptor, Integration } from '../../api/types';
 import DataTable from '../../components/DataTable';
@@ -9,6 +9,7 @@ import FormField from '../../components/FormField';
 import SlideOver from '../../components/SlideOver';
 import StatusBadge from '../../components/StatusBadge';
 import { useToast } from '../../components/Toast';
+import { categoryVisual, connectorVisual } from './connectorMeta';
 
 interface Form {
   id: number | null;
@@ -114,8 +115,15 @@ export default function Integrations() {
   const setSetting = (key: string, value: string) =>
     setForm({ ...form, settings: { ...form.settings, [key]: value } });
 
-  const fortinet = catalog.filter((c) => c.category === 'fortinet');
-  const microsoft = catalog.filter((c) => c.category === 'microsoft');
+  const categories = useMemo(() => {
+    const grouped = new Map<string, ConnectorDescriptor[]>();
+    for (const c of catalog) {
+      const list = grouped.get(c.category) ?? [];
+      list.push(c);
+      grouped.set(c.category, list);
+    }
+    return [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [catalog]);
 
   return (
     <>
@@ -126,24 +134,82 @@ export default function Integrations() {
         engine for hands-off, scheduled synchronisation.
       </p>
 
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        {[['Fortinet', fortinet], ['Microsoft', microsoft]].map(([title, items]) => (
-          <div key={title as string} className="f-card p-3">
-            <div className="font-semibold text-sm mb-2">{title as string}</div>
-            <div className="flex flex-wrap gap-2">
-              {(items as ConnectorDescriptor[]).map((c) => (
-                <button key={c.kind} className="f-btn-secondary text-xs" onClick={() => startCreate(c.kind)}>
-                  <Plug size={12} /> {c.label}
-                </button>
-              ))}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
+        {categories.map(([category, items]) => {
+          const cat = categoryVisual(category);
+          return (
+            <div key={category} className="f-card overflow-hidden">
+              <div
+                className="flex items-center gap-2 px-3 py-2.5 border-b border-line"
+                style={{ background: cat.tint }}
+              >
+                <cat.Brand />
+                <span className="font-semibold text-sm" style={{ color: cat.color }}>
+                  {cat.label}
+                </span>
+                <span className="ml-auto text-xs text-muted">
+                  {items.length} connector{items.length === 1 ? '' : 's'}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3">
+                {items.map((c) => {
+                  const v = connectorVisual(c.kind);
+                  return (
+                    <button
+                      key={c.kind}
+                      onClick={() => startCreate(c.kind)}
+                      title={`Add ${c.label}`}
+                      className="group flex items-start gap-2.5 p-2.5 rounded-lg border border-line bg-white text-left transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-slate-300"
+                    >
+                      <span
+                        className="shrink-0 w-9 h-9 rounded-lg grid place-items-center transition-transform group-hover:scale-105"
+                        style={{ background: `${v.color}14`, color: v.color, border: `1px solid ${v.color}33` }}
+                      >
+                        <v.Icon size={18} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-medium text-table truncate">{c.label}</span>
+                        <span
+                          className="block text-[11px] text-muted leading-snug"
+                          style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+                        >
+                          {c.description}
+                        </span>
+                      </span>
+                      <Plus
+                        size={15}
+                        className="ml-auto shrink-0 text-muted opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ color: v.color }}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <DataTable
         columns={[
-          { header: 'Name', searchText: (i: Integration) => i.name, render: (i) => <span className="font-medium">{i.name}</span> },
+          {
+            header: 'Name',
+            searchText: (i: Integration) => i.name,
+            render: (i) => {
+              const v = connectorVisual(i.kind);
+              return (
+                <span className="inline-flex items-center gap-2 font-medium">
+                  <span
+                    className="shrink-0 w-6 h-6 rounded grid place-items-center"
+                    style={{ background: `${v.color}14`, color: v.color, border: `1px solid ${v.color}33` }}
+                  >
+                    <v.Icon size={13} />
+                  </span>
+                  {i.name}
+                </span>
+              );
+            },
+          },
           { header: 'Kind', render: (i) => <span className="text-xs">{catalog.find((c) => c.kind === i.kind)?.label ?? i.kind}</span> },
           { header: 'Enabled', render: (i) => <StatusBadge value={i.enabled ? 'used' : 'free'} /> },
           { header: 'Status', render: (i) => <StatusBadge value={i.last_status === 'ok' ? 'success' : i.last_status === 'error' ? 'failed' : 'free'} /> },

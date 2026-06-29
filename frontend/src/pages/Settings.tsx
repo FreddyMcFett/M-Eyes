@@ -417,7 +417,7 @@ export default function Settings() {
             </div>
             <div className="mt-1 flex items-center gap-2">
               <SaveBtn />
-              <span className="text-xs text-muted">Deploy DHCP afterwards to apply the change.</span>
+              <span className="text-xs text-muted">Saved changes apply to the DHCP service automatically.</span>
             </div>
           </div>
 

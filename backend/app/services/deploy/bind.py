@@ -110,7 +110,7 @@ def deploy(db: Session, actor: str, debug: bool = False) -> dict:
         return {"status": "success", "detail": f"{len(zones)} zone(s) deployed",
                 "config_version": version, **({"debug": raw} if debug else {})}
 
-    message = f"Config written; DNS engine not reachable ({(out1 + out2).strip()})"
+    message = f"{len(zones)} zone(s) staged — DNS service offline, will apply on reconnect"
     db.add(Deployment(target="bind", status="unreachable", message=message, config_version=version))
     db.flush()
     events.emit(db, "warning", "deploy", message)

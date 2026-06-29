@@ -31,8 +31,8 @@ import {
   Users as UsersIcon,
 } from 'lucide-react';
 import { api, clearToken } from '../api/client';
-import { EngineStatus } from '../api/types';
 import GlobalSearch from './GlobalSearch';
+import { EngineStatusPills } from './EngineStatus';
 
 interface NavItem {
   to: string;
@@ -88,17 +88,6 @@ const SECTIONS: NavSection[] = [
   },
 ];
 
-function EngineDot({ status, label }: { status: string | null; label: string }) {
-  const color =
-    status === 'success' ? 'bg-accent' : status === 'failed' ? 'bg-danger' : status === 'unreachable' ? 'bg-warning' : 'bg-slate-500';
-  return (
-    <span className="flex items-center gap-1.5 text-xs text-slate-300" title={`${label}: ${status ?? 'never deployed'}`}>
-      <span className={`w-2 h-2 rounded-full ${color}`} />
-      {label}
-    </span>
-  );
-}
-
 export default function AppShell() {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
@@ -106,11 +95,6 @@ export default function AppShell() {
   const { data: info } = useQuery({
     queryKey: ['system-info'],
     queryFn: () => api.get<{ version: string; config_version: number }>('/api/v1/system/info'),
-    refetchInterval: 5000,
-  });
-  const { data: engines } = useQuery({
-    queryKey: ['engine-status'],
-    queryFn: () => api.get<EngineStatus>('/api/v1/deploy/status'),
     refetchInterval: 5000,
   });
 
@@ -197,8 +181,7 @@ export default function AppShell() {
           </span>
           <div className="ml-auto flex items-center gap-4">
             <GlobalSearch />
-            <EngineDot status={engines?.bind.last_status ?? null} label="DNS" />
-            <EngineDot status={engines?.kea.last_status ?? null} label="DHCP" />
+            <EngineStatusPills />
             <a
               href="/docs"
               target="_blank"

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Trash2, UploadCloud } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { api } from '../../api/client';
 import { DhcpSubnet, Network } from '../../api/types';
 import DataTable from '../../components/DataTable';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import { EngineSyncBadge } from '../../components/EngineStatus';
 import FormField from '../../components/FormField';
 import SlideOver from '../../components/SlideOver';
 import StatusBadge from '../../components/StatusBadge';
@@ -47,13 +48,6 @@ export default function Subnets() {
       setDeleting(null);
       queryClient.invalidateQueries({ queryKey: ['dhcp-subnets'] });
     },
-    onError: (err: Error) => toast('error', err.message),
-  });
-
-  const deployDhcp = useMutation({
-    mutationFn: () => api.post<{ status: string; detail: string }>('/api/v1/deploy/kea'),
-    onSuccess: (result) =>
-      toast(result.status === 'success' ? 'success' : 'error', `DHCP: ${result.detail}`),
     onError: (err: Error) => toast('error', err.message),
   });
 
@@ -102,11 +96,7 @@ export default function Subnets() {
         }}
         createLabel="Enable DHCP on network"
         onRefresh={() => refetch()}
-        toolbar={
-          <button className="f-btn-secondary" disabled={deployDhcp.isPending} onClick={() => deployDhcp.mutate()}>
-            <UploadCloud size={14} /> Deploy DHCP
-          </button>
-        }
+        toolbar={<EngineSyncBadge target="kea" />}
       />
 
       <SlideOver title="Enable DHCP" open={editorOpen} onClose={() => setEditorOpen(false)}>

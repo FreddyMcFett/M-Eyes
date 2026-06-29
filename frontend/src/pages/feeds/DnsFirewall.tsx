@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FileCode2, RefreshCw, Trash2, UploadCloud } from 'lucide-react';
+import { FileCode2, RefreshCw, Trash2 } from 'lucide-react';
 import { api } from '../../api/client';
 import { RpzRule, ThreatFeed } from '../../api/types';
 import DataTable from '../../components/DataTable';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import { EngineSyncBadge } from '../../components/EngineStatus';
 import FormField from '../../components/FormField';
 import Modal from '../../components/Modal';
 import SlideOver from '../../components/SlideOver';
@@ -81,13 +82,6 @@ export default function DnsFirewall() {
       setDeleting(null);
       invalidate();
     },
-    onError: (err: Error) => toast('error', err.message),
-  });
-
-  const deployDns = useMutation({
-    mutationFn: () => api.post<{ status: string; detail: string }>('/api/v1/deploy/bind'),
-    onSuccess: (result) =>
-      toast(result.status === 'success' ? 'success' : 'error', `DNS: ${result.detail}`),
     onError: (err: Error) => toast('error', err.message),
   });
 
@@ -180,9 +174,7 @@ export default function DnsFirewall() {
             <button className="f-btn-secondary" onClick={() => setPreviewOpen(true)}>
               <FileCode2 size={14} /> Preview RPZ zone
             </button>
-            <button className="f-btn-secondary" disabled={deployDns.isPending} onClick={() => deployDns.mutate()}>
-              <UploadCloud size={14} /> Deploy DNS
-            </button>
+            <EngineSyncBadge target="bind" />
           </>
         }
       />

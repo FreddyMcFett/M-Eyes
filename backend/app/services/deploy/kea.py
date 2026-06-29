@@ -58,11 +58,12 @@ def deploy(db: Session, actor: str, debug: bool = False) -> dict:
         events.emit(db, "error", "deploy", message)
         return {"status": "failed", "detail": message, **({"debug": raw} if debug else {})}
     except (httpx.HTTPError, json.JSONDecodeError, KeyError, IndexError) as exc:
-        message = f"Config written; DHCP engine not reachable ({exc.__class__.__name__})"
+        message = f"{subnet_count} subnet(s) staged — DHCP service offline, will apply on reconnect"
         db.add(Deployment(target="kea", status="unreachable", message=message, config_version=version))
         db.flush()
         events.emit(db, "warning", "deploy", message)
-        return {"status": "unreachable", "detail": message, "config_version": version}
+        return {"status": "unreachable", "detail": message, "config_version": version,
+                **({"debug": exc.__class__.__name__} if debug else {})}
 
 
 def ping() -> dict:
