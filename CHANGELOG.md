@@ -2,6 +2,16 @@
 
 All notable changes are generated automatically from conventional commits.
 
+# [1.11.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.10.2...v1.11.0) (2026-06-29)
+
+
+### Features
+
+* **command-center:** deeper 3D framing for the console surface ([1b6dcea](https://github.com/FreddyMcFett/M-Eyes/commit/1b6dcea998461be1a71711005761085b5c1fe747))
+* **deploy:** present DNS/DHCP as native auto-applied services ([bf91733](https://github.com/FreddyMcFett/M-Eyes/commit/bf91733d149c5442f9374496afa883a151fa065f))
+* **events:** export the event log as a .log file ([33c1c26](https://github.com/FreddyMcFett/M-Eyes/commit/33c1c265a9507e645e2808135d6bb2061889c69b))
+* **integrations:** categorized connector picker with vendor icons ([a1cab36](https://github.com/FreddyMcFett/M-Eyes/commit/a1cab36942794933978bc52709539a557ca89743))
+
 ## [1.10.2](https://github.com/FreddyMcFett/M-Eyes/compare/v1.10.1...v1.10.2) (2026-06-17)
 
 
