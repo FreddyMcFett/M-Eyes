@@ -17,6 +17,28 @@ def test_event_filters(client, auth_headers):
     assert warnings and all(e["severity"] == "warning" for e in warnings)
 
 
+def test_events_export_log_file(client, auth_headers):
+    client.post("/api/v1/networks", json={"cidr": "10.96.0.0/24"}, headers=auth_headers)
+    resp = client.get("/api/v1/events/export", headers=auth_headers)
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/plain")
+    disposition = resp.headers["content-disposition"]
+    assert "attachment" in disposition and ".log" in disposition
+    body = resp.text
+    assert body.startswith("# M-Eyes event log export")
+    assert "[ipam]" in body and "10.96.0.0/24" in body
+
+
+def test_events_export_respects_filters(client, auth_headers):
+    client.post("/api/v1/auth/login", json={"username": "admin", "password": "nope"})
+    resp = client.get("/api/v1/events/export?severity=warning&category=auth", headers=auth_headers)
+    assert resp.status_code == 200
+    assert "severity=warning" in resp.text and "category=auth" in resp.text
+    lines = [ln for ln in resp.text.splitlines() if ln and not ln.startswith("#")]
+    assert lines  # the failed login produced a warning auth event
+    assert all("WARNING" in ln for ln in lines)
+
+
 def test_settings_roundtrip(client, auth_headers):
     response = client.put(
         "/api/v1/system/settings",
