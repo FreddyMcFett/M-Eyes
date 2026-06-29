@@ -76,7 +76,7 @@ export default function SubnetDetail() {
       }
       return api.patch(`/api/v1/dhcp/subnets/${id}`, body);
     },
-    onSuccess: () => onDone('Settings saved — deploy DHCP to apply'),
+    onSuccess: () => onDone('Settings saved — applying to the DHCP service'),
     onError,
   });
 

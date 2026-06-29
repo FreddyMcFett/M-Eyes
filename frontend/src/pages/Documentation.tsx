@@ -15,6 +15,7 @@ import {
   List,
   ListChecks,
   Plug,
+  RefreshCw,
   Rss,
   Search,
   Server,
@@ -23,7 +24,6 @@ import {
   ShieldBan,
   ShieldOff,
   Tags,
-  UploadCloud,
   Users as UsersIcon,
 } from 'lucide-react';
 
@@ -56,13 +56,13 @@ const SECTIONS: Section[] = [
         what: 'The landing page summarising the whole platform: object counts (networks, IPs, zones, records, DHCP scopes, feeds), top network utilisation, DNS/DHCP engine status, a live event feed and the most recent configuration changes.',
         useCases: [
           'Get an at-a-glance health check of DNS/DHCP/IPAM in one screen.',
-          'Spot configuration drift — see when an engine is behind the current config version.',
+          'See DNS/DHCP service health at a glance in the Services panel.',
           'Jump straight to the area you need: every stat card is clickable.',
         ],
         configure: [
           'No configuration required — it reads live data from the API.',
           'Click any stat card (e.g. "Networks") to open the matching page (IPAM, DNS, DHCP, Feeds).',
-          'Use the Deploy buttons in the Engines panel to push pending config to the DNS or DHCP engine.',
+          'The Services panel shows live DNS/DHCP health — configuration changes apply automatically.',
         ],
         tips: ['Counts and engine status auto-refresh every 5 seconds; live events stream over Server-Sent Events.'],
       },
@@ -121,7 +121,7 @@ const SECTIONS: Section[] = [
           'Open a zone to add records (A, AAAA, CNAME, MX, TXT, NS, SRV, PTR …).',
           'Use "Edit zone" to set SOA timers, DNSSEC and access-control ACLs.',
           'Toggle DNSSEC on the zone to sign it with the default policy; pull the DS record for your registrar.',
-          'Deploy from the Dashboard or via an auto-deploy automation rule to push to the DNS engine.',
+          'Changes apply to the DNS service automatically — no manual deploy step.',
         ],
       },
       {
@@ -159,7 +159,7 @@ const SECTIONS: Section[] = [
           'Set options (routers, domain-name-servers, domain-name) at scope or global level.',
           'Use "Advanced Settings" on a scope for lease timers, boot server/file and client class.',
           'Set server-wide lease defaults under System → Settings → DNS & DHCP.',
-          'Add reservations by MAC → IP; they appear in IPAM too. Deploy DHCP.',
+          'Add reservations by MAC → IP; they appear in IPAM too and apply automatically.',
         ],
       },
       {
@@ -263,9 +263,9 @@ const SECTIONS: Section[] = [
         configure: [
           'Open DNS Firewall → New Rule. Enter the FQDN and pick the action.',
           'For substitute, provide the replacement A/AAAA/CNAME target.',
-          'Deploy DNS — while any rule is enabled, the RPZ zone and response-policy are published.',
+          'While any rule is enabled, the RPZ zone and response-policy are published to the DNS service automatically.',
         ],
-        tips: ['Point your clients at the DNS engine for the firewall to take effect — RPZ acts on resolver responses.'],
+        tips: ['Point your clients at the DNS service for the firewall to take effect — RPZ acts on resolver responses.'],
       },
     ],
   },
@@ -423,16 +423,16 @@ const SECTIONS: Section[] = [
       },
       {
         id: 'deploy',
-        title: 'Deployment (DNS & DHCP)',
-        icon: <UploadCloud size={16} />,
-        what: 'M-Eyes is the management plane: it renders engine-native config (DNS zone files, DHCP JSON) and reloads the engines over their native control channels. When engines are down it keeps working in management-only mode and reports unreachable.',
+        title: 'DNS & DHCP services',
+        icon: <RefreshCw size={16} />,
+        what: 'The DNS and DHCP services are part of the platform and always running. M-Eyes renders their native config (DNS zone files, DHCP JSON) and applies it over their native control channels automatically whenever you make a change — there is no manual deploy step. If a service is momentarily offline the change is staged and applied on reconnect (management-only mode).',
         useCases: [
-          'Push pending DNS/DHCP changes to the live engines safely.',
-          'Operate management-only when engines are offline; deploy later.',
+          'Manage zones, records and scopes — changes apply to the live services on their own.',
+          'Keep editing while a service is offline; staged changes apply automatically when it returns.',
         ],
         configure: [
-          'Use the Deploy buttons on the Dashboard Engines panel, or an auto-deploy automation rule.',
-          'Deploys run validation before reloading the engine.',
+          'Nothing to do — saving a change applies it. Service health shows on the Dashboard and in the top bar.',
+          'Every change is validated before it is applied to the running service.',
         ],
       },
     ],

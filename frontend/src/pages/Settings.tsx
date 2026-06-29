@@ -243,7 +243,7 @@ export default function Settings() {
   const restore = useMutation({
     mutationFn: (backup: Record<string, unknown>) => api.post('/api/v1/system/restore', backup),
     onSuccess: () => {
-      toast('success', 'Configuration restored — review and deploy to the engines');
+      toast('success', 'Configuration restored — changes apply to the services automatically');
       setRestoreConfirm(null);
       qc.invalidateQueries();
     },

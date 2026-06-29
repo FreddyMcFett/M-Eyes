@@ -104,10 +104,10 @@ def deploy(db: Session, actor: str, debug: bool = False) -> dict:
 
     if ok_reconfig and ok_reload:
         db.add(Deployment(target="bind", status="success",
-                          message=f"{len(zones)} zone(s) deployed", config_version=version))
+                          message=f"{len(zones)} zone(s) applied", config_version=version))
         db.flush()
-        events.emit(db, "info", "deploy", f"DNS deployment succeeded ({len(zones)} zones, v{version})")
-        return {"status": "success", "detail": f"{len(zones)} zone(s) deployed",
+        events.emit(db, "info", "deploy", f"DNS configuration applied ({len(zones)} zones, v{version})")
+        return {"status": "success", "detail": f"{len(zones)} zone(s) applied",
                 "config_version": version, **({"debug": raw} if debug else {})}
 
     message = f"{len(zones)} zone(s) staged — DNS service offline, will apply on reconnect"
