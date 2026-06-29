@@ -12,6 +12,12 @@ automatic configuration versioning and self-generating documentation.
 > engine-native configuration for **BIND9** and **Kea DHCP**, and publishes your address
 > data as feeds that **FortiGates consume natively** as External Resources.
 
+<p align="center">
+  <img src="docs/img/screenshots/command-center.png" alt="M-Eyes Command Center — live security exposure fabric" width="900" />
+  <br />
+  <em>Command Center — a live exposure fabric over the dark SOC surface.</em>
+</p>
+
 ## Features
 
 | Area | Highlights |
@@ -41,6 +47,27 @@ The control plane never speaks DNS or DHCP itself: it renders engine-native
 configuration (validated zone files for BIND9, `kea-dhcp4.conf` for Kea) and triggers
 reloads over the engines' native control channels. Full details:
 [docs/architecture.md](docs/architecture.md).
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><strong>Operational dashboard</strong><br /><img src="docs/img/screenshots/dashboard.png" alt="Dashboard — KPIs, system status, resource monitor and live events" /></td>
+    <td width="50%"><strong>IPAM — network hierarchy</strong><br /><img src="docs/img/screenshots/ipam.png" alt="IPAM networks with containers, subnets, VLANs, tags and utilization" /></td>
+  </tr>
+  <tr>
+    <td><strong>DNS zones</strong><br /><img src="docs/img/screenshots/dns.png" alt="DNS zones and records" /></td>
+    <td><strong>DHCP scopes</strong><br /><img src="docs/img/screenshots/dhcp.png" alt="DHCP scopes mapped to IPAM networks" /></td>
+  </tr>
+  <tr>
+    <td><strong>DNS Firewall (RPZ)</strong><br /><img src="docs/img/screenshots/dns-firewall.png" alt="DNS Firewall response-policy-zone rules and threat-intelligence feeds" /></td>
+    <td><strong>Fortinet feeds</strong><br /><img src="docs/img/screenshots/fortinet-feeds.png" alt="Token-protected External Resource feeds with FortiGate CLI snippets" /></td>
+  </tr>
+  <tr>
+    <td><strong>Asset management</strong><br /><img src="docs/img/screenshots/assets.png" alt="Asset CMDB cross-referenced to DDI data" /></td>
+    <td><strong>Automation &amp; autonomy</strong><br /><img src="docs/img/screenshots/automation.png" alt="Background automation engine — scheduled, drift-gated tasks" /></td>
+  </tr>
+</table>
 
 ## Quick start (Docker)
 

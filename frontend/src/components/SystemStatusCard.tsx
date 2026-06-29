@@ -6,7 +6,6 @@ import {
   DownloadCloud,
   Loader2,
   RefreshCw,
-  RotateCw,
   Server,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -102,9 +101,12 @@ export default function SystemStatusCard({ status }: { status?: SystemStatus }) 
             <div className="font-medium text-table mb-1 flex items-center gap-1.5 text-accent">
               <CheckCircle2 size={14} /> Update complete — now on v{upd.progress?.current_version ?? upd.targetVersion}
             </div>
-            <button className="f-btn-primary !py-1 text-xs" onClick={() => window.location.reload()}>
-              <RotateCw size={13} /> Reload now
-            </button>
+            <p className="text-xs text-muted flex items-center gap-1.5">
+              <Loader2 size={12} className="animate-spin" /> Reloading the interface…{' '}
+              <button className="text-info hover:underline" onClick={() => window.location.reload()}>
+                Reload now
+              </button>
+            </p>
           </div>
         ) : upd.updating ? (
           <div className="border border-info rounded p-2.5 bg-info/5 mt-2">

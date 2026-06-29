@@ -14,6 +14,7 @@ theme:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Screenshots: screenshots.md
   - Feature Reference: features.md
   - Architecture: architecture.md
   - Infoblox-style Features: infoblox-features.md

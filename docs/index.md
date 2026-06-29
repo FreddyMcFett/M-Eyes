@@ -3,6 +3,10 @@
 **M-Eyes** is an open-source DDI platform — DNS, DHCP and IP Address Management in one
 control plane — with first-class Fortinet ecosystem integration and a FortiOS-style UI.
 
+![M-Eyes Command Center](img/screenshots/command-center.png)
+
+More views in the [screenshot gallery](screenshots.md).
+
 ## What it does
 
 - **IPAM** — network hierarchy (containers / subnets), IP inventory with statuses,
