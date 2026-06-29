@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+## [1.11.2](https://github.com/FreddyMcFett/M-Eyes/compare/v1.11.1...v1.11.2) (2026-06-29)
+
+
+### Bug Fixes
+
+* **release:** publish refactor-only changes so in-app upgrades aren't stuck ([dffcec2](https://github.com/FreddyMcFett/M-Eyes/commit/dffcec2a8c71f7f8cda6b5ccf5ceecfc3652ec5d)), closes [#22](https://github.com/FreddyMcFett/M-Eyes/issues/22) [#22](https://github.com/FreddyMcFett/M-Eyes/issues/22)
+
 ## [1.11.1](https://github.com/FreddyMcFett/M-Eyes/compare/v1.11.0...v1.11.1) (2026-06-29)
 
 
