@@ -34,19 +34,16 @@
     radial-gradient(820px 480px at 100% 0%, rgba(167, 139, 250, 0.13), transparent 55%),
     radial-gradient(700px 520px at 50% 120%, rgba(45, 212, 191, 0.10), transparent 60%),
     linear-gradient(180deg, #04060d 0%, #060b18 55%, #04070f 100%);
-  border-radius: 16px;
   overflow: hidden;
   isolation: isolate;
-  min-height: calc(100vh - 92px);
-  /* Raised "console" frame: glassy top edge, recessed interior depth and a deep
-     ambient drop so the whole surface reads as a physical panel above the page. */
-  border: 1px solid rgba(80, 180, 240, 0.18);
+  /* Full-bleed cockpit: the dark SOC surface fills the whole content area and
+     meets the top bar directly — no rounded card, no light gutter framing it.
+     Depth comes purely from inner shadows, with a faint glossy top edge that
+     reads as the screen bezel sitting just under the header. */
+  min-height: 100%;
   box-shadow:
     inset 0 1px 0 var(--cc-bevel-hi),
-    inset 0 0 0 1px rgba(8, 14, 28, 0.6),
-    inset 0 -60px 90px -60px rgba(0, 0, 0, 0.7),
-    0 24px 60px -22px rgba(0, 0, 0, 0.6),
-    0 6px 16px -8px rgba(0, 0, 0, 0.5);
+    inset 0 -60px 90px -60px rgba(0, 0, 0, 0.7);
 }
 
 /* The drifting aurora glows live on the .cc-root background gradient above; the

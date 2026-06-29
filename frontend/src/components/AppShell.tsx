@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Activity,
@@ -90,7 +90,14 @@ const SECTIONS: NavSection[] = [
 
 export default function AppShell() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  // The Command Center is a full-bleed dark cockpit: it fills the content area
+  // edge to edge and continues straight from the top bar, so it skips the light
+  // padding the operational pages use (which would otherwise frame it in a grey
+  // gutter). Other routes keep the standard FortiOS light canvas with padding.
+  const cockpit = location.pathname === '/';
 
   const { data: info } = useQuery({
     queryKey: ['system-info'],
@@ -199,7 +206,7 @@ export default function AppShell() {
             </button>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-4">
+        <main className={`flex-1 overflow-y-auto ${cockpit ? 'bg-[#05070f]' : 'p-4'}`}>
           <Outlet />
         </main>
       </div>
