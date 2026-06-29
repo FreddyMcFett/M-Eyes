@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+## [1.11.1](https://github.com/FreddyMcFett/M-Eyes/compare/v1.11.0...v1.11.1) (2026-06-29)
+
+
+### Bug Fixes
+
+* **frontend:** revalidate index.html so updates show immediately ([1c54a9d](https://github.com/FreddyMcFett/M-Eyes/commit/1c54a9df7662b8894e7f1ee3f1073d1edf89808c))
+
 # [1.11.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.10.2...v1.11.0) (2026-06-29)
 
 
