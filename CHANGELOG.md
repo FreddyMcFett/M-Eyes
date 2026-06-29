@@ -2,6 +2,18 @@
 
 All notable changes are generated automatically from conventional commits.
 
+# [1.12.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.11.2...v1.12.0) (2026-06-29)
+
+
+### Bug Fixes
+
+* **command-center:** full-bleed cockpit instead of a light-framed card ([ff4ca8b](https://github.com/FreddyMcFett/M-Eyes/commit/ff4ca8b10c3b8f1f40ab0f0136c8674a388438f1))
+
+
+### Features
+
+* **update:** reload the UI automatically after an in-app update ([0200ef8](https://github.com/FreddyMcFett/M-Eyes/commit/0200ef84b35d13945d1d0350ab1f0bc950373ed0))
+
 ## [1.11.2](https://github.com/FreddyMcFett/M-Eyes/compare/v1.11.1...v1.11.2) (2026-06-29)
 
 
