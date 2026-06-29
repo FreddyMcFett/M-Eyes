@@ -48,10 +48,10 @@ export default function GlobalSearch() {
     <div className="relative" ref={wrapper}>
       <Search
         size={15}
-        className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted"
+        className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
       />
       <input
-        className="f-input !pl-9 w-64"
+        className="!pl-9 w-64 rounded-lg px-3 py-2 text-table bg-white/10 text-slate-100 placeholder-slate-400 border border-white/10 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/25 focus:bg-white/[0.14] transition-all"
         placeholder="Search everything…"
         value={term}
         onChange={(e) => {
@@ -61,24 +61,24 @@ export default function GlobalSearch() {
         onFocus={() => setOpen(true)}
       />
       {open && debounced.length >= 2 && (
-        <div className="absolute right-0 mt-1 w-96 max-h-96 overflow-y-auto bg-white border border-line rounded shadow-lg z-50">
+        <div className="absolute right-0 mt-2 w-96 max-h-96 overflow-y-auto bg-white border border-line rounded-xl shadow-lg z-50 p-1.5 animate-fade-up">
           {results.length === 0 && (
-            <div className="px-3 py-2 text-table text-muted">No matches</div>
+            <div className="px-3 py-2.5 text-table text-muted">No matches</div>
           )}
           {results.map((r) => (
             <button
               key={`${r.type}-${r.id}`}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-table hover:bg-slate-100"
+              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-table hover:bg-accent/10 transition-colors"
               onClick={() => {
                 navigate(r.url);
                 setOpen(false);
                 setTerm('');
               }}
             >
-              <span className="px-1.5 py-0.5 rounded bg-slate-200 text-[10px] uppercase shrink-0">
+              <span className="px-1.5 py-0.5 rounded-md bg-accent/12 text-accent-dark border border-accent/25 text-[10px] font-semibold uppercase shrink-0">
                 {TYPE_LABELS[r.type] ?? r.type}
               </span>
-              <span className="font-mono truncate">{r.label}</span>
+              <span className="font-mono truncate text-ink">{r.label}</span>
               <span className="ml-auto text-muted truncate">{r.detail}</span>
             </button>
           ))}

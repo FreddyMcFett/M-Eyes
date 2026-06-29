@@ -21,6 +21,11 @@ const STYLES: Record<string, string> = {
 export default function StatusBadge({ value }: { value: string }) {
   const style = STYLES[value] ?? 'bg-slate-100 text-slate-600 border-slate-200';
   return (
-    <span className={`inline-block px-2 py-0.5 rounded border text-xs font-medium ${style}`}>{value}</span>
+    <span
+      className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-0.5 rounded-full border text-[11px] font-semibold ${style}`}
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+      {value}
+    </span>
   );
 }

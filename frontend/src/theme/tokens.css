@@ -2,67 +2,290 @@
 @tailwind components;
 @tailwind utilities;
 
-/* FortiOS 7.x inspired palette */
+/* ============================================================================
+   M-Eyes design tokens — a modern, cloud-native control-plane look.
+
+   Two coordinated surfaces share one accent + motion language:
+     • Chrome (sidebar / top bar / auth) — a deep, glassy "deep-space" navy.
+     • Content — a clean, airy light canvas with soft depth and subtle blooms.
+
+   The futuristic Command Center (see command.css) extends the same emerald →
+   cyan → violet accent triad, so the whole product reads as one system.
+   ========================================================================== */
 :root {
-  --sidebar-bg: #1e2b3c;
-  --sidebar-hover: #27374d;
-  --sidebar-active: #2e4159;
-  --topbar-bg: #16202e;
-  --accent: #4caf50;
-  --accent-dark: #3d8b40;
-  --content-bg: #f1f3f5;
+  /* ---- Brand accent triad (shared with the Command Center) -------------- */
+  --accent: #10b981;            /* emerald — primary action / brand */
+  --accent-dark: #059669;
+  --accent-soft: #34d399;
+  --brand-cyan: #06b6d4;
+  --brand-teal: #14b8a6;
+  --brand-violet: #8b5cf6;
+  --brand-indigo: #6366f1;
+
+  /* ---- Light content surfaces ------------------------------------------- */
+  --content-bg: #eef2f8;
   --card-bg: #ffffff;
-  --table-header-bg: #e9ecef;
-  --border: #d8dde3;
-  --text-muted: #6b7785;
-  --danger: #d9534f;
-  --warning: #f0ad4e;
-  --info: #3a87ad;
+  --card-bg-2: #f7f9fc;
+  --table-header-bg: #f1f5fb;
+  --border: #e3e8f0;
+  --border-soft: #eef2f7;
+  --text: #0f1b2d;
+  --text-muted: #64748b;
+
+  /* ---- Deep-space chrome (sidebar / top bar / login) -------------------- */
+  --shell-1: #0a1120;           /* deepest */
+  --shell-2: #0f1a2e;
+  --shell-3: #16243d;           /* hover */
+  --shell-active: #1b2c4b;      /* active nav */
+  --shell-line: rgba(148, 163, 184, 0.12);
+  --shell-text: #cbd6e6;
+
+  /* Back-compat aliases (older class names map onto the new shell scale). */
+  --sidebar-bg: var(--shell-2);
+  --sidebar-hover: var(--shell-3);
+  --sidebar-active: var(--shell-active);
+  --topbar-bg: var(--shell-1);
+
+  /* ---- Semantic state colours ------------------------------------------- */
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #0ea5e9;
+
+  /* ---- Elevation (soft, layered, modern) -------------------------------- */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06), 0 2px 6px -2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 6px 16px -4px rgba(15, 23, 42, 0.12), 0 2px 6px -2px rgba(15, 23, 42, 0.07);
+  --shadow-lg: 0 18px 40px -12px rgba(15, 23, 42, 0.20), 0 6px 14px -6px rgba(15, 23, 42, 0.10);
+  --shadow-accent: 0 10px 28px -10px rgba(16, 185, 129, 0.45);
+
+  /* ---- Type -------------------------------------------------------------- */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+    monospace;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  background: var(--content-bg);
 }
 
 body {
-  @apply bg-content text-slate-800 antialiased;
-  font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  color: var(--text);
+  font-family: var(--font-sans);
   font-size: 13px;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  /* Airy, modern canvas: a cool light base with faint emerald / indigo blooms
+     in opposite corners so the operational pages never read as flat grey. */
+  background:
+    radial-gradient(1100px 620px at 100% -12%, rgba(16, 185, 129, 0.07), transparent 60%),
+    radial-gradient(1000px 640px at -12% 112%, rgba(99, 102, 241, 0.07), transparent 58%),
+    linear-gradient(180deg, #f4f7fc 0%, #eaeef6 100%);
+  background-attachment: fixed;
 }
 
-/* dense FortiOS-style tables */
+/* Slim, modern scrollbars across the light app surface. */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.28);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.45); background-clip: padding-box; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+::selection { background: rgba(16, 185, 129, 0.22); }
+
+/* ============================================================================
+   Reusable surface + motion utilities
+   ========================================================================== */
+@layer components {
+  /* Frosted dark chrome surfaces ---------------------------------------- */
+  .app-sidebar {
+    background:
+      linear-gradient(180deg, rgba(99, 102, 241, 0.10), transparent 22%),
+      linear-gradient(180deg, var(--shell-2) 0%, var(--shell-1) 100%);
+    border-right: 1px solid var(--shell-line);
+  }
+  .app-topbar {
+    background: linear-gradient(180deg, rgba(15, 26, 46, 0.92), rgba(10, 17, 32, 0.92));
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--shell-line);
+  }
+
+  /* Light content card — soft depth, hairline border, gentle hover lift. */
+  .f-card {
+    position: relative;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7)),
+      var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Buttons -------------------------------------------------------------- */
+  .f-btn {
+    @apply inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-table font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .f-btn-primary {
+    @apply f-btn text-white;
+    background: linear-gradient(180deg, var(--accent-soft), var(--accent));
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, var(--shadow-accent);
+  }
+  .f-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(180deg, var(--accent), var(--accent-dark));
+    transform: translateY(-1px);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset, 0 14px 30px -10px rgba(16, 185, 129, 0.55);
+  }
+  .f-btn-primary:active:not(:disabled) { transform: translateY(0); }
+  .f-btn-secondary {
+    @apply f-btn bg-white border text-slate-700;
+    border-color: var(--border);
+    box-shadow: var(--shadow-xs);
+  }
+  .f-btn-secondary:hover:not(:disabled) {
+    @apply bg-slate-50 text-slate-900;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+  }
+  .f-btn-danger {
+    @apply f-btn text-white;
+    background: linear-gradient(180deg, #f87171, var(--danger));
+    box-shadow: 0 10px 24px -10px rgba(239, 68, 68, 0.5);
+  }
+  .f-btn-danger:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.03); }
+
+  /* Inputs --------------------------------------------------------------- */
+  .f-input {
+    @apply w-full rounded-lg px-3 py-2 text-table bg-white transition-all duration-200;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-xs);
+  }
+  .f-input:focus {
+    @apply outline-none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16);
+  }
+  .f-label {
+    @apply block text-table font-semibold mb-1.5;
+    color: var(--text-muted);
+  }
+  .f-icon-btn {
+    @apply inline-flex items-center justify-center p-1.5 rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  /* Page + section headings --------------------------------------------- */
+  .f-page-title {
+    @apply text-lg font-bold tracking-tight;
+    color: var(--text);
+  }
+  .f-section-title {
+    @apply text-sm font-semibold flex items-center gap-2;
+    color: var(--text);
+  }
+}
+
+/* Dense data tables ------------------------------------------------------- */
 .f-table {
   @apply w-full text-table border-collapse;
 }
 .f-table th {
-  @apply bg-table-header text-left font-semibold text-slate-600 px-3 py-2 border-b border-line whitespace-nowrap select-none;
+  @apply text-left font-semibold px-3.5 py-2.5 whitespace-nowrap select-none;
+  color: var(--text-muted);
+  background: var(--table-header-bg);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
+.f-table th:first-child { border-top-left-radius: 13px; }
+.f-table th:last-child { border-top-right-radius: 13px; }
 .f-table td {
-  @apply px-3 py-1.5 border-b border-line align-middle;
+  @apply px-3.5 py-2.5 align-middle;
+  border-bottom: 1px solid var(--border-soft);
+}
+.f-table tbody tr {
+  transition: background-color 0.15s ease;
 }
 .f-table tbody tr:hover {
-  @apply bg-slate-50;
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.06), rgba(16, 185, 129, 0.02));
+}
+.f-table tbody tr:last-child td { border-bottom: 0; }
+
+/* Gradient text helper (emerald → cyan → violet). */
+.text-gradient {
+  background: linear-gradient(90deg, var(--accent-soft), var(--brand-cyan), var(--brand-violet));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
-.f-card {
-  @apply bg-card border border-line rounded shadow-sm;
+/* ============================================================================
+   Motion — entrance + ambient animations (all collapse under reduced-motion)
+   ========================================================================== */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.96); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes drift {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(3%, -4%, 0) scale(1.06); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes shimmer {
+  100% { transform: translateX(220%); }
+}
+@keyframes hue-shift {
+  to { background-position: 300% 0; }
+}
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(28px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
-.f-btn {
-  @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-table font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
-}
-.f-btn-primary {
-  @apply f-btn bg-accent text-white hover:bg-accent-dark;
-}
-.f-btn-secondary {
-  @apply f-btn bg-white border border-line text-slate-700 hover:bg-slate-50;
-}
-.f-btn-danger {
-  @apply f-btn bg-danger text-white hover:opacity-90;
-}
+.animate-fade-up { animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-fade-in { animation: fade-in 0.5s ease both; }
+.animate-pop-in { animation: pop-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
-.f-input {
-  @apply w-full border border-line rounded px-2.5 py-1.5 text-table bg-white focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent;
-}
-.f-label {
-  @apply block text-table font-medium text-slate-600 mb-1;
-}
-.f-icon-btn {
-  @apply inline-flex items-center justify-center p-1 rounded text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
+/* Hover-lift helper for clickable cards. */
+.hover-lift { transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, border-color 0.25s ease; }
+.hover-lift:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+
+/* A gentle one-time entrance applied to every content card on mount, giving
+   each page a polished settle without disturbing dense tables. */
+.f-card { animation: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .f-card { animation: none !important; }
 }

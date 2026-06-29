@@ -45,7 +45,7 @@ export default function DataTable<T>({
 
   return (
     <div className="f-card">
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-line">
+      <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-line">
         {onCreate && (
           <button className="f-btn-primary" onClick={onCreate}>
             <Plus size={14} /> {createLabel}

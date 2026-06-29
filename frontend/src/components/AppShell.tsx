@@ -111,53 +111,66 @@ export default function AppShell() {
   };
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-2 pl-8 pr-3 py-1.5 text-[13px] border-l-[3px] transition-colors ${
+    `group relative flex items-center gap-2.5 pl-8 pr-3 py-2 text-[13px] border-l-[3px] transition-all duration-200 [&>svg]:transition-colors ${
       isActive
-        ? 'bg-sidebar-active border-accent text-white'
-        : 'border-transparent text-slate-300 hover:bg-sidebar-hover hover:text-white'
+        ? 'border-accent text-white bg-[linear-gradient(90deg,rgba(16,185,129,0.20),rgba(16,185,129,0.015))] shadow-[inset_0_0_22px_-8px_rgba(16,185,129,0.6)] [&>svg]:text-accent-soft'
+        : 'border-transparent text-slate-300/85 hover:text-white hover:bg-white/[0.06] [&>svg]:text-slate-400 hover:[&>svg]:text-slate-200'
     }`;
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-[230px] bg-sidebar flex flex-col shrink-0">
-        <div className="flex items-center gap-2 px-4 py-3.5 bg-topbar">
-          <img src="/logo.svg" alt="M-Eyes" className="w-7 h-7 rounded" />
-          <div>
-            <div className="text-white font-bold leading-tight tracking-wide">M-EYES</div>
-            <div className="text-[10px] text-slate-400 uppercase">DDI Platform</div>
+      {/* Sidebar — deep-space glass rail */}
+      <aside className="app-sidebar relative w-[238px] flex flex-col shrink-0">
+        {/* ambient top glow */}
+        <div className="pointer-events-none absolute -top-16 -left-10 h-48 w-48 rounded-full bg-accent/20 blur-3xl" />
+        <div className="pointer-events-none absolute top-24 -right-16 h-48 w-48 rounded-full bg-brand-indigo/20 blur-3xl" />
+
+        <div className="relative flex items-center gap-2.5 px-4 py-4 border-b border-[var(--shell-line)]">
+          <div className="relative shrink-0">
+            <div className="absolute inset-0 rounded-xl bg-accent/40 blur-md" />
+            <img src="/logo.svg" alt="M-Eyes" className="relative w-8 h-8 rounded-xl ring-1 ring-white/15" />
+          </div>
+          <div className="leading-tight">
+            <div className="font-extrabold tracking-[0.14em] text-gradient text-[15px]">M-EYES</div>
+            <div className="text-[9.5px] text-slate-400 uppercase tracking-[0.22em]">DDI Platform</div>
           </div>
         </div>
-        <nav className="flex-1 overflow-y-auto py-2">
+
+        <nav className="relative flex-1 overflow-y-auto py-3">
           <NavLink to="/" end className={linkClass}>
-            <LayoutGrid size={14} /> Command Center
+            <LayoutGrid size={15} /> Command Center
           </NavLink>
           <NavLink to="/dashboard" className={linkClass}>
-            <LayoutDashboard size={14} /> Dashboard
+            <LayoutDashboard size={15} /> Dashboard
           </NavLink>
           {SECTIONS.map((section) => {
             const isCollapsed = collapsed[section.label];
             return (
-              <div key={section.label}>
+              <div key={section.label} className="mt-3">
                 <button
-                  className="w-full flex items-center gap-2 px-4 py-2 mt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-200"
+                  className="w-full flex items-center gap-2 px-4 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-slate-500 hover:text-slate-300 transition-colors"
                   onClick={() => setCollapsed((c) => ({ ...c, [section.label]: !c[section.label] }))}
                 >
-                  {section.icon}
+                  <span className="text-slate-500">{section.icon}</span>
                   <span className="flex-1 text-left">{section.label}</span>
                   {isCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
                 </button>
-                {!isCollapsed &&
-                  section.items.map((item) => (
+                <div
+                  className={`overflow-hidden transition-all duration-300 ${
+                    isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[420px] opacity-100'
+                  }`}
+                >
+                  {section.items.map((item) => (
                     <NavLink key={item.to} to={item.to} className={linkClass}>
                       {item.icon} {item.label}
                     </NavLink>
                   ))}
+                </div>
               </div>
             );
           })}
-          <div className="mt-2">
-            <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+          <div className="mt-3">
+            <div className="px-4 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-slate-500 flex items-center gap-2">
               <SettingsIcon size={15} /> System
             </div>
             <NavLink to="/extattrs" className={linkClass}>
@@ -174,16 +187,17 @@ export default function AppShell() {
             </NavLink>
           </div>
         </nav>
-        <div className="px-4 py-2 text-[10px] text-slate-500 border-t border-slate-700">
-          v{info?.version ?? '…'}
+        <div className="relative px-4 py-2.5 text-[10px] text-slate-500 border-t border-[var(--shell-line)] flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_6px] shadow-accent animate-pulse" />
+          M-Eyes v{info?.version ?? '…'}
         </div>
       </aside>
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-topbar flex items-center gap-4 px-4 py-2 shrink-0">
-          <div className="text-slate-200 text-sm font-medium">M-Eyes Management</div>
-          <span className="ml-2 px-2 py-0.5 rounded bg-sidebar-active text-accent text-xs font-mono">
+        <header className="app-topbar relative z-20 flex items-center gap-4 px-5 py-2.5 shrink-0">
+          <div className="text-slate-200 text-sm font-semibold tracking-tight">M-Eyes Management</div>
+          <span className="ml-1 inline-flex items-center px-2.5 py-1 rounded-lg bg-accent/15 text-accent-soft text-[11px] font-mono border border-accent/25">
             config v{info?.config_version ?? 0}
           </span>
           <div className="ml-auto flex items-center gap-4">
@@ -193,20 +207,23 @@ export default function AppShell() {
               href="/docs"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center text-slate-300 hover:text-white transition-colors"
+              className="flex items-center text-slate-400 hover:text-white transition-colors"
               title="Documentation (opens in a new tab)"
             >
               <HelpCircle size={17} />
             </a>
-            <span className="flex items-center gap-1.5 text-xs text-slate-300">
-              <User size={13} /> admin
+            <span className="flex items-center gap-1.5 text-xs text-slate-300 pl-3 border-l border-[var(--shell-line)]">
+              <span className="grid place-items-center w-6 h-6 rounded-lg bg-white/10 text-slate-200">
+                <User size={13} />
+              </span>
+              admin
             </span>
-            <button onClick={logout} className="text-slate-300 hover:text-white" title="Log out">
+            <button onClick={logout} className="text-slate-400 hover:text-danger transition-colors" title="Log out">
               <LogOut size={15} />
             </button>
           </div>
         </header>
-        <main className={`flex-1 overflow-y-auto ${cockpit ? 'bg-[#05070f]' : 'p-4'}`}>
+        <main className={`flex-1 overflow-y-auto ${cockpit ? 'bg-[#05070f]' : 'p-5'}`}>
           <Outlet />
         </main>
       </div>
