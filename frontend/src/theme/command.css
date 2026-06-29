@@ -66,6 +66,13 @@
   z-index: 1;
 }
 
+/* Minimal mode: a single centerpiece (the exposure fabric) vertically centred
+   on the console surface with nothing else competing for attention. */
+.cc-root--minimal {
+  display: grid;
+  align-content: center;
+}
+
 @keyframes cc-edge {
   to { background-position: 200% 0; }
 }
