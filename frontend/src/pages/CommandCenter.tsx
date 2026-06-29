@@ -497,8 +497,23 @@ export default function CommandCenter() {
         </div>
       </div>
 
-      {/* Exposure fabric map (centerpiece) ------------------------------- */}
-      <ThreatFabricMap sources={fabricSources} metrics={fabricMetrics} active={activeBranch} resolved={resolvedBranch} />
+      {/* Exposure fabric map (centerpiece) — framed in a recessed 3D stage -- */}
+      <div className="cc-stage">
+        <span className="cc-corner cc-corner--tl" />
+        <span className="cc-corner cc-corner--tr" />
+        <span className="cc-corner cc-corner--bl" />
+        <span className="cc-corner cc-corner--br" />
+        <header className="cc-panel-title cc-stage__bar">
+          <Waypoints size={14} style={{ color: 'var(--cc-cyan)' }} />
+          <span className="cc-tt">Exposure Fabric</span>
+          <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] tracking-[0.2em] uppercase" style={{ color: 'var(--cc-muted)' }}>
+            <span className="cc-dot cc-pulse" style={{ background: 'var(--cc-green)', color: 'var(--cc-green)' }} /> live
+          </span>
+        </header>
+        <div className="cc-stage__screen">
+          <ThreatFabricMap sources={fabricSources} metrics={fabricMetrics} active={activeBranch} resolved={resolvedBranch} />
+        </div>
+      </div>
 
       {/* Metric strip ---------------------------------------------------- */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

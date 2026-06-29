@@ -25,6 +25,8 @@
   --cc-text: #cfe6ff;
   --cc-muted: #6f8bb5;
 
+  --cc-bevel-hi: rgba(255, 255, 255, 0.08);
+
   position: relative;
   color: var(--cc-text);
   background:
@@ -32,15 +34,33 @@
     radial-gradient(820px 480px at 100% 0%, rgba(167, 139, 250, 0.13), transparent 55%),
     radial-gradient(700px 520px at 50% 120%, rgba(45, 212, 191, 0.10), transparent 60%),
     linear-gradient(180deg, #04060d 0%, #060b18 55%, #04070f 100%);
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
   isolation: isolate;
   min-height: calc(100vh - 92px);
+  /* Raised "console" frame: glassy top edge, recessed interior depth and a deep
+     ambient drop so the whole surface reads as a physical panel above the page. */
+  border: 1px solid rgba(80, 180, 240, 0.18);
+  box-shadow:
+    inset 0 1px 0 var(--cc-bevel-hi),
+    inset 0 0 0 1px rgba(8, 14, 28, 0.6),
+    inset 0 -60px 90px -60px rgba(0, 0, 0, 0.7),
+    0 24px 60px -22px rgba(0, 0, 0, 0.6),
+    0 6px 16px -8px rgba(0, 0, 0, 0.5);
 }
 
-/* The drifting aurora glows live on the .cc-root background gradient above;
-   the animated HUD grid and the sweeping scan beam were removed for a calmer,
-   cleaner surface. */
+/* The drifting aurora glows live on the .cc-root background gradient above; the
+   animated HUD grid was removed for a calmer base. A soft edge vignette is
+   layered on top to deepen the corners and reinforce the 3D framing. */
+.cc-root::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(130% 90% at 50% -10%, transparent 58%, rgba(0, 0, 0, 0.34) 100%);
+}
 .cc-root > * {
   position: relative;
   z-index: 1;
@@ -54,13 +74,32 @@
 .cc-panel {
   position: relative;
   background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 24%),
     linear-gradient(180deg, var(--cc-panel), var(--cc-panel-2));
   border: 1px solid var(--cc-line);
   border-radius: 12px;
   backdrop-filter: blur(8px);
+  /* Raised glass tile: bright top edge, soft inner floor, layered drop shadow. */
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 6px 18px rgba(0, 0, 0, 0.3);
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.015),
+    inset 0 -18px 32px -22px rgba(0, 0, 0, 0.6),
+    0 2px 4px rgba(0, 0, 0, 0.28),
+    0 16px 32px -14px rgba(0, 0, 0, 0.55);
+  transition:
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.24s ease,
+    border-color 0.24s ease;
+}
+.cc-panel:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -18px 32px -22px rgba(0, 0, 0, 0.6),
+    0 4px 8px rgba(0, 0, 0, 0.32),
+    0 28px 54px -16px rgba(0, 0, 0, 0.62),
+    0 0 0 1px rgba(56, 189, 248, 0.1);
 }
 /* Thin static accent line across the top edge of a panel. */
 .cc-panel::before {
@@ -73,12 +112,14 @@
   border-radius: 12px 12px 0 0;
 }
 
-/* HUD corner brackets (rendered as four absolutely-positioned spans). */
+/* HUD corner brackets (rendered as four absolutely-positioned spans).
+   Embossed with a faint glow so they read as raised hardware detail. */
 .cc-corner {
   position: absolute;
-  width: 12px;
-  height: 12px;
-  border: 1px solid rgba(34, 211, 238, 0.35);
+  width: 13px;
+  height: 13px;
+  border: 1px solid rgba(125, 215, 255, 0.55);
+  filter: drop-shadow(0 0 2px rgba(34, 211, 238, 0.45));
   pointer-events: none;
   z-index: 2;
 }
@@ -104,6 +145,47 @@
 
 .cc-glow {
   text-shadow: 0 0 6px currentColor;
+}
+
+/* 3D framed "stage" for the centerpiece exposure map ---------------------- */
+/* Outer raised bezel with a glossy top edge and a deep ambient drop, holding a
+   recessed inner screen so the fabric map looks like a console display. */
+.cc-stage {
+  position: relative;
+  border-radius: 18px;
+  padding: 0 14px 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 18%),
+    linear-gradient(180deg, rgba(20, 32, 58, 0.66), rgba(8, 14, 28, 0.62));
+  border: 1px solid var(--cc-line);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 26px 56px -20px rgba(0, 0, 0, 0.62);
+}
+.cc-stage__bar {
+  padding: 12px 4px 10px;
+}
+/* Recessed screen — inset shadow pushes the map "into" the console. */
+.cc-stage__screen {
+  position: relative;
+  border-radius: 13px;
+  padding: 10px 12px;
+  overflow: hidden;
+  background: radial-gradient(130% 130% at 50% -8%, rgba(14, 24, 46, 0.6), rgba(4, 7, 14, 0.72));
+  box-shadow:
+    inset 0 0 0 1px rgba(56, 189, 248, 0.1),
+    inset 0 14px 44px -18px rgba(0, 0, 0, 0.92),
+    inset 0 -10px 30px -18px rgba(0, 0, 0, 0.7);
+}
+/* Faint scanline sheen across the recessed screen for extra depth. */
+.cc-stage__screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, 0.025) 50%, transparent 65%);
 }
 
 /* Big hero title with an animated cyan→violet gradient. */
@@ -440,11 +522,28 @@
 /* Bottom metric strip chips --------------------------------------------- */
 .cc-metric {
   position: relative;
-  background: linear-gradient(160deg, rgba(34, 211, 238, 0.04), rgba(13, 21, 40, 0.5));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 26%),
+    linear-gradient(160deg, rgba(34, 211, 238, 0.05), rgba(13, 21, 40, 0.52));
   border: 1px solid var(--cc-line);
   border-radius: 12px;
   padding: 14px 16px;
   overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -14px 26px -20px rgba(0, 0, 0, 0.6),
+    0 2px 4px rgba(0, 0, 0, 0.26),
+    0 14px 28px -14px rgba(0, 0, 0, 0.5);
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+}
+.cc-metric:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.11),
+    inset 0 -14px 26px -20px rgba(0, 0, 0, 0.6),
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    0 24px 46px -16px rgba(0, 0, 0, 0.58);
 }
 .cc-chip {
   display: inline-flex;
@@ -468,4 +567,8 @@
 @media (prefers-reduced-motion: reduce) {
   .cc-pulse,
   .cc-feed-row { animation: none !important; }
+  .cc-panel,
+  .cc-metric { transition: none !important; }
+  .cc-panel:hover,
+  .cc-metric:hover { transform: none !important; }
 }
