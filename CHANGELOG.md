@@ -2,6 +2,13 @@
 
 All notable changes are generated automatically from conventional commits.
 
+# [1.13.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.12.0...v1.13.0) (2026-06-30)
+
+
+### Features
+
+* **ui:** modern cloud-native design overhaul + richer command center ([befc311](https://github.com/FreddyMcFett/M-Eyes/commit/befc311b3d8c89b2653213a596e6e3a6d732429d))
+
 # [1.12.0](https://github.com/FreddyMcFett/M-Eyes/compare/v1.11.2...v1.12.0) (2026-06-29)
 
 
