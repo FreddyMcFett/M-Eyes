@@ -26,7 +26,13 @@ export default function Dashboard() {
   const counts = stats?.counts ?? {};
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h1 className="f-page-title">Dashboard</h1>
+          <p className="text-xs text-muted mt-0.5">Operational overview of your DDI control plane</p>
+        </div>
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         <StatCard label="Networks" value={counts.networks ?? '…'} icon={<List size={22} />} accent to="/ipam" />
         <StatCard label="IP Addresses" value={counts.ip_addresses ?? '…'} icon={<Activity size={22} />} to="/ipam" />

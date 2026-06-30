@@ -568,7 +568,101 @@
   color: #04060d;
 }
 
+/* ============================================================================
+   Cockpit backdrop layers (animated grid + starfield + scanline) and the hero
+   posture pill. These are direct children of .cc-root, so they are pinned
+   behind the content (which the earlier `.cc-root > *` rule lifts to z-index 1).
+   ========================================================================== */
+.cc-grid,
+.cc-stars,
+.cc-scan {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Faint HUD grid that slowly pans, masked so it dissolves toward the edges. */
+.cc-grid {
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.06) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask: radial-gradient(125% 90% at 50% 12%, #000 26%, transparent 78%);
+          mask: radial-gradient(125% 90% at 50% 12%, #000 26%, transparent 78%);
+  animation: cc-grid-pan 26s linear infinite;
+}
+@keyframes cc-grid-pan {
+  to { background-position: 48px 48px, 48px 48px; }
+}
+
+/* Receding perspective "floor" grid at the bottom edge for 3D depth. */
+.cc-grid::after {
+  content: '';
+  position: absolute;
+  left: -25%;
+  right: -25%;
+  bottom: 0;
+  height: 42%;
+  background-image:
+    linear-gradient(rgba(45, 212, 191, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 212, 191, 0.12) 1px, transparent 1px);
+  background-size: 60px 60px;
+  transform: perspective(420px) rotateX(64deg);
+  transform-origin: bottom center;
+  -webkit-mask: linear-gradient(180deg, transparent, #000 85%);
+          mask: linear-gradient(180deg, transparent, #000 85%);
+  opacity: 0.5;
+  animation: cc-floor 18s linear infinite;
+}
+@keyframes cc-floor {
+  to { background-position: 0 60px, 0 0; }
+}
+
+/* Drifting starfield — two tiled dot layers parallaxing against each other. */
+.cc-stars {
+  inset: -15%;
+  background-image:
+    radial-gradient(1px 1px at 25% 25%, rgba(125, 215, 255, 0.55), transparent 60%),
+    radial-gradient(1px 1px at 75% 65%, rgba(167, 139, 250, 0.5), transparent 60%),
+    radial-gradient(1.4px 1.4px at 55% 40%, rgba(45, 212, 191, 0.45), transparent 60%);
+  background-size: 200px 200px, 260px 260px, 320px 320px;
+  opacity: 0.7;
+  animation: cc-stars-drift 44s ease-in-out infinite alternate;
+}
+@keyframes cc-stars-drift {
+  to { transform: translate3d(2.5%, -2%, 0); }
+}
+
+/* Soft luminous band sweeping slowly down the console. */
+.cc-scan {
+  height: 38%;
+  background: linear-gradient(180deg, transparent, rgba(34, 211, 238, 0.05) 50%, transparent);
+  animation: cc-scan-move 8s linear infinite;
+}
+@keyframes cc-scan-move {
+  0% { transform: translateY(-70%); }
+  100% { transform: translateY(290%); }
+}
+
+/* Hero overall-posture pill. */
+.cc-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 15px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(8, 14, 28, 0.55));
+  border: 1px solid currentColor;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 22px -8px currentColor;
+  backdrop-filter: blur(6px);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .cc-grid,
+  .cc-grid::after,
+  .cc-stars,
+  .cc-scan { animation: none !important; }
   .cc-pulse,
   .cc-feed-row { animation: none !important; }
   .cc-panel,

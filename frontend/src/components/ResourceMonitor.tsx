@@ -2,28 +2,34 @@ import { Cpu, Gauge as GaugeIcon, HardDrive, MemoryStick } from 'lucide-react';
 import { SystemResources } from '../api/types';
 import { formatBytes, formatDuration } from '../lib/format';
 
-function barColor(percent: number): string {
-  return percent > 90 ? 'var(--danger)' : percent > 75 ? 'var(--warning)' : 'var(--accent)';
+function barGradient(percent: number): string {
+  if (percent > 90) return 'linear-gradient(90deg, #fb7185, #ef4444)';
+  if (percent > 75) return 'linear-gradient(90deg, #fbbf24, #f59e0b)';
+  return 'linear-gradient(90deg, #34d399, #06b6d4)';
+}
+function glowColor(percent: number): string {
+  return percent > 90 ? '#ef4444' : percent > 75 ? '#f59e0b' : '#10b981';
 }
 
 function Bar({ icon, label, percent, detail }: { icon: JSX.Element; label: string; percent: number | null; detail: string }) {
   const value = percent === null ? 0 : Math.min(100, Math.max(0, percent));
-  const color = barColor(value);
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
-        <span className="flex items-center gap-1.5 text-table font-medium text-slate-600">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="flex items-center gap-1.5 text-table font-semibold text-slate-600">
           <span className="text-accent">{icon}</span> {label}
         </span>
-        <span className="text-xs text-muted">
-          {percent === null ? 'n/a' : `${value.toFixed(0)}%`} · {detail}
+        <span className="text-xs text-muted tabular-nums">
+          <b className="text-slate-700 font-semibold">{percent === null ? 'n/a' : `${value.toFixed(0)}%`}</b> · {detail}
         </span>
       </div>
-      <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+      <div className="relative h-2.5 rounded-full bg-slate-100 overflow-hidden ring-1 ring-slate-200/60">
         <div
-          className="h-full rounded-full transition-[width] duration-500"
-          style={{ width: `${value}%`, background: color }}
-        />
+          className="relative h-full rounded-full transition-[width] duration-700 ease-out overflow-hidden"
+          style={{ width: `${value}%`, background: barGradient(value), boxShadow: `0 0 10px -1px ${glowColor(value)}88` }}
+        >
+          <span className="absolute inset-y-0 -left-1/3 w-1/3 bg-white/40 blur-[2px] animate-shimmer" />
+        </div>
       </div>
     </div>
   );
